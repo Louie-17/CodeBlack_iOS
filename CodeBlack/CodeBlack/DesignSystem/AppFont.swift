@@ -67,6 +67,10 @@ extension Font {
     static let heading4 = notoSansKR(22, .semibold)
     static let heading5 = notoSansKR(20, .semibold)
     static let heading6 = notoSansKR(18, .semibold)
+    static let heading7 = notoSansKR(16, .semibold)
+    static let heading8 = notoSansKR(14, .semibold)
+    static let heading9 = notoSansKR(13, .semibold)
+    static let heading10 = notoSansKR(12, .semibold)
 
     // MARK: subtitle — Medium
     static let subtitle1 = notoSansKR(24, .medium)
@@ -93,4 +97,6 @@ extension Font {
     static let caption2 = notoSansKR(18, .medium)
     static let caption3 = notoSansKR(16, .medium)
     static let caption4 = notoSansKR(14, .medium)
+    static let caption5 = notoSansKR(13, .medium)
+    static let caption6 = notoSansKR(12, .medium)
 }

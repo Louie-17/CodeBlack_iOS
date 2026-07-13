@@ -29,6 +29,8 @@ final class AuthViewModel {
 
     /// 현재 세션의 로그인 아이디(RBAC 호출용). 없으면 미로그인.
     var loginId: String? { KeychainStore.read(KeychainKey.loginId) }
+    /// 현재 사용자 역할.
+    var role: ActorRole? { actor?.role }
     var isAuthenticated: Bool {
         if case .authenticated = state { return true }
         return false
@@ -40,17 +42,28 @@ final class AuthViewModel {
     }
 
     /// AppConfig.AutoLogin 아이디로 `POST /api/auth/login` 을 자동 호출한다.
+    /// 아이디가 미설정이면 로그인 화면 입력을 기다린다(needsCredentials).
     func autoLogin() async {
         guard AppConfig.AutoLogin.isConfigured else {
             state = .needsCredentials
             return
         }
+        await login(loginId: AppConfig.AutoLogin.loginId)
+    }
+
+    /// 로그인 화면에서 입력한 아이디로 `POST /api/auth/login` 을 호출한다.
+    func login(loginId rawLoginId: String) async {
+        let loginId = rawLoginId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !loginId.isEmpty else {
+            state = .failed("로그인 아이디를 입력하세요.")
+            return
+        }
         state = .loading
         do {
-            let result = try await userService.login(loginId: AppConfig.AutoLogin.loginId)
+            let result = try await userService.login(loginId: loginId)
             self.actor = result
 
-            let identifier = result.loginId ?? AppConfig.AutoLogin.loginId
+            let identifier = result.loginId ?? loginId
             KeychainStore.save(identifier, for: KeychainKey.loginId)
 
             let display = result.hospitalName ?? identifier
