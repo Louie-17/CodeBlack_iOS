@@ -8,15 +8,13 @@
 import SwiftUI
 
 struct ParamedicFlowView: View {
-    @Environment(AuthViewModel.self) private var auth
     @State private var path = NavigationPath()
     @State private var location = LocationProvider()
 
     var body: some View {
         NavigationStack(path: $path) {
             HospitalSearchView(
-                onSelect: { path.append(ParamedicRoute.detail($0)) },
-                onLogout: { auth.logout() }
+                onSelect: { path.append(ParamedicRoute.detail($0)) }
             )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: ParamedicRoute.self) { route in

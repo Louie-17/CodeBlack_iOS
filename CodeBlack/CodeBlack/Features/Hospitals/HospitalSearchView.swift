@@ -13,8 +13,7 @@ struct HospitalSearchView: View {
 
     /// 병원 선택 시 상세로 이동.
     let onSelect: (SelectedHospital) -> Void
-    /// 로그아웃 액션(상단 우측).
-    let onLogout: () -> Void
+    /// 병원 선택 시 상세로 이동은 onSelect 로 처리.
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,27 +33,19 @@ struct HospitalSearchView: View {
     // MARK: 헤더
 
     private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("가까운 응급실 찾기")
-                    .font(.heading4)
-                    .foregroundStyle(AppColor.textPrimary)
-                HStack(spacing: 4) {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 11))
-                    Text("현재 위치 기준")
-                        .font(.caption6)
-                }
-                .foregroundStyle(AppColor.textSecondary)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("가까운 응급실 찾기")
+                .font(.heading4)
+                .foregroundStyle(AppColor.textPrimary)
+            HStack(spacing: 4) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 11))
+                Text(location.placeName ?? "위치 확인 중…")
+                    .font(.caption6)
             }
-            Spacer()
-            Button(action: onLogout) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-            .buttonStyle(.plain)
+            .foregroundStyle(AppColor.textSecondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
         .background(AppColor.bgWhite)
