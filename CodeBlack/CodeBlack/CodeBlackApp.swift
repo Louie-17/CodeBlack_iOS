@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct CodeBlackApp: App {
+    @State private var auth = AuthViewModel()
+
     init() {
         AppFont.register()
     }
@@ -16,6 +18,10 @@ struct CodeBlackApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(auth)
+                .task {
+                    await auth.bootstrap()
+                }
         }
     }
 }
