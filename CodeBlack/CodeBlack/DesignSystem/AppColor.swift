@@ -46,6 +46,14 @@ enum AppColor {
     static let bgWhite = Color(hex: 0xFFFFFF)
     static let bgGray = Color(hex: 0xF9F9F9)
     static let bgGray2 = Color(hex: 0xF5F5F7)
+
+    // MARK: 녹음 화면(다크)
+    /// 환자 상태 녹음 화면의 다크 배경 그라디언트(중앙이 살짝 밝은 세로 밴드).
+    static let recordingBackground = LinearGradient(
+        colors: [Color(hex: 0x312329), Color(hex: 0x3E2F35), Color(hex: 0x312329)],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
 }
 
 // MARK: - 혼잡도 상태 (여유 / 보통 / 혼잡)
