@@ -36,7 +36,13 @@ struct AuthFlowView: View {
                 onNext: { loginId in path.append(AuthRoute.roleSelect(loginId: loginId)) }
             )
         case .roleSelect(let loginId):
-            RoleSelectView(loginId: loginId, onBack: { path.removeLast() })
+            RoleSelectView(
+                loginId: loginId,
+                onBack: { path.removeLast() },
+                onNurseNext: { id in path.append(AuthRoute.nurseHospital(loginId: id)) }
+            )
+        case .nurseHospital(let loginId):
+            NurseHospitalView(loginId: loginId, onBack: { path.removeLast() })
         }
     }
 }
@@ -46,4 +52,5 @@ enum AuthRoute: Hashable {
     case login
     case signupId
     case roleSelect(loginId: String)
+    case nurseHospital(loginId: String)
 }

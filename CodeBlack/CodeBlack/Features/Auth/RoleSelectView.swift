@@ -11,6 +11,8 @@ import SwiftUI
 struct RoleSelectView: View {
     let loginId: String
     let onBack: () -> Void
+    /// 간호사 선택 시 근무 병원 선택 화면으로. (구급대원은 즉시 가입)
+    let onNurseNext: (String) -> Void
 
     @Environment(AuthViewModel.self) private var auth
     @State private var selected: ActorRole?
@@ -104,21 +106,27 @@ struct RoleSelectView: View {
 
     private func submit() {
         guard let role = selected else { return }
-        isSubmitting = true
-        errorMessage = nil
-        Task {
-            do {
-                try await auth.register(loginId: loginId, role: role)
-                // 성공 시 auth.state = .authenticated → 루트가 앱 플로우로 전환.
-            } catch {
-                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                isSubmitting = false
+        switch role {
+        case .nurse:
+            // 간호사는 API를 바로 보내지 않고 근무 병원 선택 화면으로 이동.
+            onNurseNext(loginId)
+        case .paramedic:
+            isSubmitting = true
+            errorMessage = nil
+            Task {
+                do {
+                    try await auth.register(loginId: loginId, role: .paramedic)
+                    // 성공 시 auth.state = .authenticated → 루트가 앱 플로우로 전환.
+                } catch {
+                    errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                    isSubmitting = false
+                }
             }
         }
     }
 }
 
 #Preview {
-    RoleSelectView(loginId: "nurse1", onBack: {})
+    RoleSelectView(loginId: "nurse1", onBack: {}, onNurseNext: { _ in })
         .environment(AuthViewModel())
 }

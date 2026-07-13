@@ -84,10 +84,18 @@ final class AuthViewModel {
     }
 
     /// 회원가입. 성공 시 세션 저장 + authenticated, 실패 시 throw.
-    func register(loginId rawLoginId: String, role: ActorRole) async throws {
+    /// 간호사는 근무 병원 HPID/병원명을 함께 전달한다(구급대원은 nil).
+    func register(
+        loginId rawLoginId: String,
+        role: ActorRole,
+        hospitalId: String? = nil,
+        hospitalName: String? = nil
+    ) async throws {
         let loginId = rawLoginId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !loginId.isEmpty else { throw AuthError.emptyLoginId }
-        let result = try await userService.signup(CreateUserRequest(loginId: loginId, role: role))
+        let result = try await userService.signup(
+            CreateUserRequest(loginId: loginId, role: role, hospitalId: hospitalId, hospitalName: hospitalName)
+        )
         apply(result, fallbackLoginId: loginId)
     }
 
