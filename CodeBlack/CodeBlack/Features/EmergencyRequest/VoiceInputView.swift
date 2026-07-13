@@ -43,9 +43,7 @@ struct VoiceInputView: View {
                     .padding(.bottom, 20)
             }
         }
-        .task {
-            if speech.status == .idle { await speech.start() }
-        }
+
         .onDisappear { speech.cancel() }
     }
 
@@ -77,7 +75,9 @@ struct VoiceInputView: View {
     @ViewBuilder
     private var content: some View {
         switch speech.status {
-        case .idle, .recording:
+        case .idle:
+            idleState
+        case .recording:
             recordingState
         case .finished:
             finishedState
@@ -91,6 +91,35 @@ struct VoiceInputView: View {
                 title: "음성 인식을 사용할 수 없습니다",
                 message: "네트워크·기기 설정을 확인하거나 아래에 직접 입력하세요."
             )
+        }
+    }
+
+    private var idleState: some View {
+        VStack(spacing: 16) {
+            Button {
+                Task { await speech.start() }
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(AppColor.brandGreen)
+                        .frame(width: 116, height: 116)
+                    Circle()
+                        .strokeBorder(AppColor.brandGreenDeep, lineWidth: 5)
+                        .frame(width: 116, height: 116)
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.white)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Text("클릭하여 환자 상태 녹음")
+                .font(.heading4)
+                .foregroundStyle(.white)
+                .padding(.top, 8)
+            Text("예: 개방성 골절")
+                .font(.body5)
+                .foregroundStyle(.white.opacity(0.6))
         }
     }
 
@@ -183,7 +212,9 @@ struct VoiceInputView: View {
     @ViewBuilder
     private var controls: some View {
         switch speech.status {
-        case .idle, .recording:
+        case .idle:
+            EmptyView()   // 시작은 중앙 마이크 버튼으로
+        case .recording:
             CTAButton(title: "완료", style: .green) { speech.stop() }
         case .finished:
             VStack(spacing: 12) {
