@@ -1,0 +1,5 @@
+# GJC agent runtime state
+.gjc/
+
+# macOS
+.DS_Store
