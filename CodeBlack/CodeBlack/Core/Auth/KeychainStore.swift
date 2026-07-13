@@ -54,4 +54,6 @@ enum KeychainStore {
 enum KeychainKey {
     /// 현재 로그인한 사용자의 로그인 아이디(세션 식별자). 토큰 대신 사용.
     static let loginId = "codeblack.loginId"
+    /// 세션 만료 시각(epoch 초, 문자열). 이 시각 이전이면 자동 로그인한다.
+    static let sessionExpiry = "codeblack.sessionExpiry"
 }

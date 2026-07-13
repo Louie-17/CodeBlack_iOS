@@ -2,9 +2,9 @@
 //  AuthViewModel.swift
 //  CodeBlack
 //
-//  앱 실행 시 로그인 화면 없이 자동으로 로그인 API를 호출하는 인증 뷰모델.
-//  서버는 비밀번호 없이 로그인 아이디만으로 사용자를 식별하고, 토큰 대신
-//  로그인 아이디를 세션 식별자로 보관한다.
+//  인증 뷰모델. 비밀번호 없이 로그인 아이디로 식별하고, 토큰 대신 로그인 아이디를
+//  세션 식별자로 Keychain에 보관한다.
+//  한 번 로그인하면 세션 만료(AppConfig.Session.validity) 전까지 재입력 없이 자동 로그인한다.
 //
 
 import Foundation
@@ -18,7 +18,7 @@ final class AuthViewModel {
         case idle
         case loading
         case authenticated(name: String, role: String)
-        case needsCredentials      // AppConfig.AutoLogin 미설정
+        case needsCredentials      // 저장된 세션 없음/만료 → 로그인 화면
         case failed(String)
     }
 
@@ -36,22 +36,37 @@ final class AuthViewModel {
         return false
     }
 
-    /// 앱 진입 시 호출. 자동 로그인을 수행한다(화면 없음).
-    func bootstrap() async {
-        await autoLogin()
+    /// 저장된 세션 만료 시각.
+    private var sessionExpiry: Date? {
+        guard let raw = KeychainStore.read(KeychainKey.sessionExpiry),
+              let epoch = TimeInterval(raw) else { return nil }
+        return Date(timeIntervalSince1970: epoch)
     }
 
-    /// AppConfig.AutoLogin 아이디로 `POST /api/auth/login` 을 자동 호출한다.
-    /// 아이디가 미설정이면 로그인 화면 입력을 기다린다(needsCredentials).
-    func autoLogin() async {
-        guard AppConfig.AutoLogin.isConfigured else {
-            state = .needsCredentials
+    /// 저장된 로그인 세션이 아직 유효한지(아이디 있음 + 만료 전).
+    var hasValidSession: Bool {
+        guard let saved = loginId, !saved.isEmpty, let expiry = sessionExpiry else { return false }
+        return expiry > Date()
+    }
+
+    /// 앱 진입 시 호출. 자동 로그인을 시도한다(화면 없음).
+    func bootstrap() async {
+        // 1) 개발용 자동 로그인 아이디가 설정돼 있으면 우선 사용.
+        if AppConfig.AutoLogin.isConfigured {
+            await login(loginId: AppConfig.AutoLogin.loginId)
             return
         }
-        await login(loginId: AppConfig.AutoLogin.loginId)
+        // 2) 저장된 세션이 만료 전이면 재입력 없이 자동 로그인.
+        if hasValidSession, let saved = loginId {
+            await login(loginId: saved)
+            return
+        }
+        // 3) 저장된 세션 없음/만료 → 로그인 화면.
+        clearSession()
+        state = .needsCredentials
     }
 
-    /// 로그인 화면에서 입력한 아이디로 `POST /api/auth/login` 을 호출한다.
+    /// 로그인 아이디로 `POST /api/auth/login` 을 호출하고, 성공 시 세션을 저장/연장한다.
     func login(loginId rawLoginId: String) async {
         let loginId = rawLoginId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !loginId.isEmpty else {
@@ -64,7 +79,7 @@ final class AuthViewModel {
             self.actor = result
 
             let identifier = result.loginId ?? loginId
-            KeychainStore.save(identifier, for: KeychainKey.loginId)
+            saveSession(loginId: identifier)
 
             let display = result.hospitalName ?? identifier
             let role = result.role?.rawValue ?? ""
@@ -75,10 +90,24 @@ final class AuthViewModel {
         }
     }
 
-    /// 로그아웃: 세션 아이디 삭제 후 초기 상태로.
+    /// 로그아웃: 저장된 세션을 삭제하고 초기 상태로.
     func logout() {
-        KeychainStore.delete(KeychainKey.loginId)
+        clearSession()
         actor = nil
         state = .idle
+    }
+
+    // MARK: - 세션 저장
+
+    /// 로그인 아이디 저장 + 만료 시각을 지금부터 유효기간만큼 연장(슬라이딩).
+    private func saveSession(loginId: String) {
+        KeychainStore.save(loginId, for: KeychainKey.loginId)
+        let expiry = Date().addingTimeInterval(AppConfig.Session.validity)
+        KeychainStore.save(String(expiry.timeIntervalSince1970), for: KeychainKey.sessionExpiry)
+    }
+
+    private func clearSession() {
+        KeychainStore.delete(KeychainKey.loginId)
+        KeychainStore.delete(KeychainKey.sessionExpiry)
     }
 }

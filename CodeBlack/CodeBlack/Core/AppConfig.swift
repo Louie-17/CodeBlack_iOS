@@ -23,4 +23,10 @@ enum AppConfig {
 
         static var isConfigured: Bool { !loginId.isEmpty }
     }
+
+    /// 로그인 세션 정책. 한 번 로그인하면 이 기간 동안 재입력 없이 자동 로그인한다.
+    enum Session {
+        /// 세션 유효기간(초). 기본 30일.
+        static let validity: TimeInterval = 60 * 60 * 24 * 30
+    }
 }
