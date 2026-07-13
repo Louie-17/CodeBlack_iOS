@@ -15,8 +15,13 @@ struct HospitalDetailView: View {
 
     @State private var viewModel = HospitalDetailViewModel()
 
+    /// 표시할 가용병상 수. 목록에서 본 값(추천 응답)을 우선해 상세와 값이 어긋나지 않게 한다.
+    private var availableBeds: Int? {
+        hospital.availableBeds ?? viewModel.detail?.availableBeds
+    }
+
     private var congestion: Congestion {
-        Congestion(availableBeds: viewModel.detail?.availableBeds)
+        Congestion(availableBeds: availableBeds)
     }
 
     var body: some View {
@@ -74,7 +79,7 @@ struct HospitalDetailView: View {
             )
             statCard(
                 title: "가용병상",
-                value: "\(viewModel.detail?.availableBeds ?? 0)",
+                value: "\(availableBeds ?? 0)",
                 caption: congestion.label,
                 tint: congestion.color
             )

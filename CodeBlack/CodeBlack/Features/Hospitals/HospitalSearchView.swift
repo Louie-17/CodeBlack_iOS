@@ -170,7 +170,8 @@ struct HospitalSearchView: View {
             name: hospital.name ?? "이름 미상",
             latitude: hospital.latitude,
             longitude: hospital.longitude,
-            distanceKilometers: hospital.distanceKilometers
+            distanceKilometers: hospital.distanceKilometers,
+            availableBeds: hospital.availableBeds
         )
     }
 }

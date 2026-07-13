@@ -15,6 +15,8 @@ struct SelectedHospital: Hashable {
     let longitude: Double?
     /// 목록에서 계산된 현재 위치 기준 거리(km). 상세 화면 표시용.
     var distanceKilometers: Double? = nil
+    /// 목록(추천)에서 표시된 가용병상 수. 상세 화면과 값이 일치하도록 전달한다.
+    var availableBeds: Int? = nil
 
     /// 요청 생성 시 사용할 대상 병원 DTO로 변환.
     var target: TargetHospitalRequest {
