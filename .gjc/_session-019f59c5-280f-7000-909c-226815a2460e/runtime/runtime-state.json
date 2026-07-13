@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "session_id": "019f59c5-280f-7000-909c-226815a2460e",
+  "state": "errored",
+  "ready_for_input": false,
+  "updated_at": "2026-07-13T04:38:41.033Z",
+  "current_turn_id": null,
+  "last_turn_id": null,
+  "live": false,
+  "reason": "process_exit",
+  "source": "process_postmortem",
+  "event": "process_exit",
+  "cwd": "/Users/leejh/Desktop/CodeBlack_iOS",
+  "workdir": "/Users/leejh/Desktop/CodeBlack_iOS",
+  "branch": null,
+  "session_file": "/Users/leejh/.gjc/agent/sessions/-Desktop-CodeBlack_iOS/2026-07-13T04-38-40-911Z_019f59c5-280f-7000-909c-226815a2460e.jsonl",
+  "ended_at": "2026-07-13T04:38:41.033Z",
+  "detected_at": "2026-07-13T04:38:41.033Z",
+  "exit_kind": "exit",
+  "exit_code": 1,
+  "signal": null,
+  "error": {
+    "code": "process_exit",
+    "message": "GJC process exited with code 1",
+    "recoverable": true
+  },
+  "recovery": {
+    "action": "recover_or_resume_session",
+    "reason": "process exited with a non-zero status"
+  },
+  "previous_runtime_state": null
+}
