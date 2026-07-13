@@ -9,6 +9,10 @@ import SwiftUI
 
 @main
 struct CodeBlackApp: App {
+    init() {
+        AppFont.register()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
