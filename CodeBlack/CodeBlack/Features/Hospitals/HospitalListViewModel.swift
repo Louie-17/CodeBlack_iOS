@@ -23,7 +23,7 @@ final class HospitalListViewModel {
 
     private(set) var loadState: LoadState = .idle
     private(set) var hospitals: [HospitalRecommendationResponse] = []
-    var sort: HospitalSort = .recommendation
+    var sort: HospitalSort = .distance   // 기본 정렬: 거리순
 
     private let service = HospitalService()
 
