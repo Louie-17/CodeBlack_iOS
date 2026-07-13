@@ -57,7 +57,7 @@ CodeBlack iOS 앱 작업 규칙 및 프로젝트 컨텍스트. 모든 AI 에이�
 - **UI**: SwiftUI
 - **iOS Deployment Target**: 26.5 / **Swift**: 5.0
 - **동시성**: `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = YES` → 기본 MainActor 격리 전제. async/await 기반으로 작성한다.
-- **Bundle ID**: `codeBlack.CodeBlack` / **Target**: iPhone + iPad
+- **Bundle ID**: `com.louie17.CodeBlack` / **Target**: iPhone + iPad
 - **현지화**: String Catalog 사용 (`LOCALIZATION_PREFERS_STRING_CATALOGS = YES`) — 하드코딩 문자열 대신 문자열 카탈로그 사용.
 
 **프로젝트 구조:**
