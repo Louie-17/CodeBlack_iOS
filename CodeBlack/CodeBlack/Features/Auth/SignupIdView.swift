@@ -1,19 +1,18 @@
 //
-//  LoginView.swift
+//  SignupIdView.swift
 //  CodeBlack
 //
-//  온보딩 — 로그인하기. 비밀번호 없이 로그인 아이디만 입력한다.
+//  회원가입 1단계 — 아이디 생성. 유니크 로그인 아이디를 입력한다.
 //
 
 import SwiftUI
 
-struct LoginView: View {
+struct SignupIdView: View {
     let onBack: () -> Void
+    /// 다음 단계(사용자 유형 선택)로 입력한 아이디 전달.
+    let onNext: (String) -> Void
 
-    @Environment(AuthViewModel.self) private var auth
     @State private var loginId = ""
-    @State private var isLoading = false
-    @State private var errorMessage: String?
     @FocusState private var focused: Bool
 
     private var trimmed: String {
@@ -24,13 +23,13 @@ struct LoginView: View {
         VStack(alignment: .leading, spacing: 0) {
             BackChevronBar(onBack: onBack)
 
-            Text("로그인하기")
+            Text("아이디 생성")
                 .font(.heading3)
                 .foregroundStyle(AppColor.textPrimary)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
 
-            Text("발급받은 아이디를 입력하세요.")
+            Text("로그인에 사용할 유니크한 아이디를 입력하세요.")
                 .font(.body5)
                 .foregroundStyle(AppColor.textSecondary)
                 .padding(.horizontal, 20)
@@ -41,9 +40,9 @@ struct LoginView: View {
                 .foregroundStyle(AppColor.textPrimary)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .submitLabel(.go)
+                .submitLabel(.next)
                 .focused($focused)
-                .onSubmit(submit)
+                .onSubmit(next)
                 .padding(.horizontal, 16)
                 .frame(height: 52)
                 .background(RoundedRectangle(cornerRadius: 12).fill(AppColor.bgGray2))
@@ -54,45 +53,22 @@ struct LoginView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
 
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.caption5)
-                    .foregroundStyle(AppColor.emergencyRed)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-            }
-
             Spacer()
 
-            CTAButton(
-                title: isLoading ? "로그인 중…" : "로그인",
-                isEnabled: !trimmed.isEmpty && !isLoading,
-                action: submit
-            )
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
+            CTAButton(title: "다음", isEnabled: !trimmed.isEmpty, action: next)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
         }
         .background(AppColor.bgWhite)
     }
 
-    private func submit() {
+    private func next() {
         guard !trimmed.isEmpty else { return }
         focused = false
-        isLoading = true
-        errorMessage = nil
-        Task {
-            do {
-                try await auth.authenticate(loginId: trimmed)
-                // 성공 시 auth.state = .authenticated → 루트가 앱 플로우로 전환.
-            } catch {
-                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                isLoading = false
-            }
-        }
+        onNext(trimmed)
     }
 }
 
 #Preview {
-    LoginView(onBack: {})
-        .environment(AuthViewModel())
+    SignupIdView(onBack: {}, onNext: { _ in })
 }

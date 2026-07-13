@@ -21,8 +21,8 @@ struct ContentView: View {
             } else {
                 ParamedicFlowView()
             }
-        case .needsCredentials, .failed:
-            LoginView()
+        case .needsCredentials:
+            AuthFlowView()
         }
     }
 }

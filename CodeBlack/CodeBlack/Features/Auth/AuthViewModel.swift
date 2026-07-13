@@ -4,7 +4,10 @@
 //
 //  인증 뷰모델. 비밀번호 없이 로그인 아이디로 식별하고, 토큰 대신 로그인 아이디를
 //  세션 식별자로 Keychain에 보관한다.
-//  한 번 로그인하면 세션 만료(AppConfig.Session.validity) 전까지 재입력 없이 자동 로그인한다.
+//  한 번 로그인/가입하면 세션 만료(AppConfig.Session.validity) 전까지 재입력 없이 자동 로그인한다.
+//
+//  대화형 로그인/가입(authenticate/register)은 실패 시 throw 하고 전역 state를 흔들지 않는다.
+//  → 온보딩 NavigationStack이 유지되고, 각 화면이 로컬에서 에러를 표시한다.
 //
 
 import Foundation
@@ -16,10 +19,9 @@ final class AuthViewModel {
 
     enum State: Equatable {
         case idle
-        case loading
-        case authenticated(name: String, role: String)
-        case needsCredentials      // 저장된 세션 없음/만료 → 로그인 화면
-        case failed(String)
+        case loading          // 콜드 스타트 자동 로그인 중
+        case authenticated
+        case needsCredentials // 온보딩(웰컴/로그인/가입) 화면 표시
     }
 
     private(set) var state: State = .idle
@@ -49,55 +51,60 @@ final class AuthViewModel {
         return expiry > Date()
     }
 
-    /// 앱 진입 시 호출. 자동 로그인을 시도한다(화면 없음).
+    /// 앱 진입 시 호출. 저장된 세션이 있으면 재입력 없이 자동 로그인, 없으면 온보딩.
     func bootstrap() async {
-        // 1) 개발용 자동 로그인 아이디가 설정돼 있으면 우선 사용.
         if AppConfig.AutoLogin.isConfigured {
-            await login(loginId: AppConfig.AutoLogin.loginId)
+            await silentLogin(AppConfig.AutoLogin.loginId)
             return
         }
-        // 2) 저장된 세션이 만료 전이면 재입력 없이 자동 로그인.
         if hasValidSession, let saved = loginId {
-            await login(loginId: saved)
+            await silentLogin(saved)
             return
         }
-        // 3) 저장된 세션 없음/만료 → 로그인 화면.
         clearSession()
         state = .needsCredentials
     }
 
-    /// 로그인 아이디로 `POST /api/auth/login` 을 호출하고, 성공 시 세션을 저장/연장한다.
-    func login(loginId rawLoginId: String) async {
-        let loginId = rawLoginId.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !loginId.isEmpty else {
-            state = .failed("로그인 아이디를 입력하세요.")
-            return
-        }
+    /// 콜드 스타트 자동 로그인. 실패하면 온보딩으로(세션은 유지해 다음 실행에 재시도).
+    private func silentLogin(_ loginId: String) async {
         state = .loading
         do {
-            let result = try await userService.login(loginId: loginId)
-            self.actor = result
-
-            let identifier = result.loginId ?? loginId
-            saveSession(loginId: identifier)
-
-            let display = result.hospitalName ?? identifier
-            let role = result.role?.rawValue ?? ""
-            state = .authenticated(name: display, role: role)
+            try await authenticate(loginId: loginId)
         } catch {
-            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            state = .failed(message)
+            state = .needsCredentials
         }
     }
 
-    /// 로그아웃: 저장된 세션을 삭제하고 초기 상태로.
+    /// 로그인. 성공 시 세션 저장 + authenticated, 실패 시 throw(전역 state 유지).
+    func authenticate(loginId rawLoginId: String) async throws {
+        let loginId = rawLoginId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !loginId.isEmpty else { throw AuthError.emptyLoginId }
+        let result = try await userService.login(loginId: loginId)
+        apply(result, fallbackLoginId: loginId)
+    }
+
+    /// 회원가입. 성공 시 세션 저장 + authenticated, 실패 시 throw.
+    func register(loginId rawLoginId: String, role: ActorRole) async throws {
+        let loginId = rawLoginId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !loginId.isEmpty else { throw AuthError.emptyLoginId }
+        let result = try await userService.signup(CreateUserRequest(loginId: loginId, role: role))
+        apply(result, fallbackLoginId: loginId)
+    }
+
+    /// 로그아웃: 저장된 세션 삭제 후 온보딩으로.
     func logout() {
         clearSession()
         actor = nil
-        state = .idle
+        state = .needsCredentials
     }
 
-    // MARK: - 세션 저장
+    // MARK: - 내부
+
+    private func apply(_ result: ActorResponse, fallbackLoginId: String) {
+        self.actor = result
+        saveSession(loginId: result.loginId ?? fallbackLoginId)
+        state = .authenticated
+    }
 
     /// 로그인 아이디 저장 + 만료 시각을 지금부터 유효기간만큼 연장(슬라이딩).
     private func saveSession(loginId: String) {
@@ -109,5 +116,16 @@ final class AuthViewModel {
     private func clearSession() {
         KeychainStore.delete(KeychainKey.loginId)
         KeychainStore.delete(KeychainKey.sessionExpiry)
+    }
+}
+
+/// 인증 입력 검증 오류.
+enum AuthError: LocalizedError {
+    case emptyLoginId
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyLoginId: return "아이디를 입력하세요."
+        }
     }
 }

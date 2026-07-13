@@ -10,10 +10,11 @@ import SwiftUI
 struct CTAButton: View {
 
     enum Style {
-        case green      // 메인 초록 채움
-        case red        // 응급 레드 채움
-        case outline    // 회색 보더 (보조 액션)
-        case outlineRed // 레드 보더 (취소성 액션)
+        case green        // 메인 초록 채움
+        case red          // 응급 레드 채움
+        case outline      // 회색 보더 (보조 액션)
+        case outlineGreen // 초록 보더 (회원가입 등 보조 액션)
+        case outlineRed   // 레드 보더 (취소성 액션)
     }
 
     let title: String
@@ -44,6 +45,7 @@ struct CTAButton: View {
         switch style {
         case .green, .red: return .white
         case .outline: return AppColor.textPrimary
+        case .outlineGreen: return AppColor.brandGreenDark
         case .outlineRed: return AppColor.emergencyRed
         }
     }
@@ -52,7 +54,7 @@ struct CTAButton: View {
         switch style {
         case .green: return AppColor.brandGreen
         case .red: return AppColor.emergencyRed
-        case .outline, .outlineRed: return .clear
+        case .outline, .outlineGreen, .outlineRed: return .clear
         }
     }
 
@@ -60,6 +62,7 @@ struct CTAButton: View {
         switch style {
         case .green, .red: return .clear
         case .outline: return AppColor.border
+        case .outlineGreen: return AppColor.brandGreen
         case .outlineRed: return AppColor.emergencyRed
         }
     }
@@ -67,7 +70,7 @@ struct CTAButton: View {
     private var borderWidth: CGFloat {
         switch style {
         case .green, .red: return 0
-        case .outline, .outlineRed: return 1
+        case .outline, .outlineGreen, .outlineRed: return 1
         }
     }
 }

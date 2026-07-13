@@ -37,3 +37,24 @@ struct BackBar: View {
         .padding(.horizontal, 12)
     }
 }
+
+/// 타이틀 없는 back 전용 상단 바(온보딩 화면용). 좌측 상단 chevron만.
+struct BackChevronBar: View {
+    let onBack: () -> Void
+
+    var body: some View {
+        HStack {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            Spacer()
+        }
+        .frame(height: 52)
+        .padding(.horizontal, 8)
+    }
+}
