@@ -68,17 +68,23 @@ struct APIClient {
             }
         }
 
+        APILog.request(request)
+        let startedAt = Date()
+
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await session.data(for: request)
         } catch {
+            APILog.failure(error, for: request, duration: Date().timeIntervalSince(startedAt))
             throw APIError.transport(error)
         }
 
         guard let http = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
+
+        APILog.response(http, data: data, for: request, duration: Date().timeIntervalSince(startedAt))
 
         let envelope = try? decoder.decode(APIResponse<T>.self, from: data)
 
