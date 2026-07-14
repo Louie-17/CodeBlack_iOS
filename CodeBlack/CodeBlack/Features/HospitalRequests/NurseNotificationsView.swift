@@ -48,7 +48,8 @@ struct NurseNotificationsView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.top, 28)
+        .padding(.bottom, 16)
         .background(AppColor.bgWhite)
     }
 
