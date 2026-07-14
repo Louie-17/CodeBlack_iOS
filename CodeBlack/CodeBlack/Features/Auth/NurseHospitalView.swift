@@ -94,7 +94,9 @@ struct NurseHospitalView: View {
             hint("병원 이름으로 검색하세요.")
         case .loading:
             Spacer()
-            ProgressView().tint(AppColor.brandGreen)
+            ProgressView()
+                .tint(AppColor.brandGreen)
+                .frame(maxWidth: .infinity)
             Spacer()
         case .failed(let message):
             hint(message)
