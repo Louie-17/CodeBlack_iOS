@@ -18,6 +18,8 @@ struct NurseFlowView: View {
     @State private var showNotifications = false
     /// 로컬 알림을 이미 발송한 알림 ID(중복 발송 방지).
     @State private var seenNotificationIds: Set<Int64> = []
+    /// 로컬 알림을 이미 발송한 요청 ID(중복 발송 방지).
+    @State private var seenRequestIds: Set<Int64> = []
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -75,8 +77,9 @@ struct NurseFlowView: View {
             await viewModel.load(loginId: loginId)
         }
         await notifications.load(loginId: loginId)
-        // 최초 로드분은 이미 지난 알림이므로 발송하지 않고 seen 처리.
+        // 최초 로드분은 이미 지난 알림/요청이므로 발송하지 않고 seen 처리.
         seenNotificationIds = Set(notifications.notifications.compactMap { $0.notificationId })
+        seenRequestIds = Set(viewModel.requests.compactMap { $0.hospitalRequestId })
         await LocalNotifier.shared.requestAuthorization()
         LocalNotifier.shared.setBadge(notifications.unreadCount)
         syncLiveActivity()
@@ -84,9 +87,24 @@ struct NurseFlowView: View {
             try? await Task.sleep(for: .seconds(15))
             await viewModel.refresh(loginId: loginId)
             await notifications.refresh(loginId: loginId)
+            fireNewRequests()
             fireNewNotifications()
             LocalNotifier.shared.setBadge(notifications.unreadCount)
             syncLiveActivity()
+        }
+    }
+
+    /// 새로 도착한 PENDING 요청에 대해 로컬 알림을 발송한다.
+    private func fireNewRequests() {
+        for request in viewModel.requests {
+            guard let id = request.hospitalRequestId, !seenRequestIds.contains(id) else { continue }
+            seenRequestIds.insert(id)
+            if request.status == .pending {
+                LocalNotifier.shared.notify(
+                    title: "새 환자 수용 요청",
+                    body: request.symptomText ?? "새로운 환자 수용 요청이 도착했습니다."
+                )
+            }
         }
     }
 
