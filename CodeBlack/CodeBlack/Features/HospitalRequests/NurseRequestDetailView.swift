@@ -12,6 +12,8 @@ import MapKit
 struct NurseRequestDetailView: View {
     let item: NurseRequestItem
     let onBack: () -> Void
+    /// 수락 성공 시 호출(이전 화면 복귀 + 완료 탭 전환은 상위에서 처리).
+    let onAccepted: () -> Void
 
     @Environment(AuthViewModel.self) private var auth
     @Environment(NurseHospitalInfo.self) private var hospital
@@ -215,7 +217,12 @@ struct NurseRequestDetailView: View {
 
     private func accept() {
         guard let loginId = auth.loginId else { return }
-        Task { await viewModel.accept(requestId: item.hospitalRequestId, loginId: loginId) }
+        Task {
+            await viewModel.accept(requestId: item.hospitalRequestId, loginId: loginId)
+            if viewModel.updatedStatus != nil {
+                onAccepted()
+            }
+        }
     }
 }
 

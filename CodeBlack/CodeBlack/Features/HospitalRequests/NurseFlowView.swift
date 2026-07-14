@@ -117,7 +117,17 @@ struct NurseFlowView: View {
     private func destination(for route: NurseRoute) -> some View {
         switch route {
         case .detail(let item):
-            NurseRequestDetailView(item: item, onBack: { path.removeLast() })
+            NurseRequestDetailView(
+                item: item,
+                onBack: { path.removeLast() },
+                onAccepted: {
+                    tab = .completed
+                    if !path.isEmpty { path.removeLast() }
+                    if let loginId = auth.loginId {
+                        Task { await viewModel.refresh(loginId: loginId) }
+                    }
+                }
+            )
         }
     }
 }
