@@ -157,12 +157,17 @@ struct VoiceInputView: View {
                 .monospacedDigit()
                 .foregroundStyle(.white)
             if !speech.transcript.isEmpty {
-                Text(speech.transcript)
-                    .font(.caption5)
-                    .foregroundStyle(.white.opacity(0.75))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 28)
-                    .padding(.top, 4)
+                ScrollView {
+                    Text(speech.transcript)
+                        .font(.body4)
+                        .foregroundStyle(.white.opacity(0.85))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 28)
+                        .padding(.vertical, 4)
+                }
+                .frame(maxHeight: 200)
             }
         }
     }
