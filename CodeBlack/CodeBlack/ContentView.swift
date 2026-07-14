@@ -34,19 +34,13 @@ struct ContentView: View {
 /// 자동 로그인 진행 중 스플래시.
 private struct SplashView: View {
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "cross.case.fill")
-                .font(.system(size: 40, weight: .bold))
-                .foregroundStyle(AppColor.brandGreen)
-            Text("CodeBlack")
-                .font(.heading2)
-                .foregroundStyle(AppColor.textPrimary)
-            ProgressView()
-                .tint(AppColor.brandGreen)
-                .padding(.top, 4)
+        ZStack {
+            AppColor.launchBackground.ignoresSafeArea()
+            Image("LaunchLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 150, height: 150)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColor.bgWhite)
     }
 }
 

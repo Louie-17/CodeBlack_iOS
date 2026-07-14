@@ -46,6 +46,8 @@ enum AppColor {
     static let bgWhite = Color(hex: 0xFFFFFF)
     static let bgGray = Color(hex: 0xF9F9F9)
     static let bgGray2 = Color(hex: 0xF5F5F7)
+    /// 런치스크린 배경(#1B1E22). 인앱 스플래시와 동일하게 사용.
+    static let launchBackground = Color(hex: 0x1B1E22)
 
     // MARK: 녹음 화면(다크)
     /// 환자 상태 녹음 화면의 다크 배경 그라디언트(중앙이 살짝 밝은 세로 밴드).
