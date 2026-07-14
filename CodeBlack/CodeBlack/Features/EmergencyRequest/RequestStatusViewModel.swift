@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreLocation
 import Observation
 
 @MainActor
@@ -54,6 +55,9 @@ final class RequestStatusViewModel {
     /// AI 발신 세션 실시간 상태(전화 걸림/받음).
     private(set) var aiCallStatus: AiCallStatusResponse?
     private var aiCallStatusTask: Task<Void, Never>?
+    /// AI 전화가 연결된 병원의 좌표(지도 표시용).
+    private(set) var hospitalCoordinate: CLLocationCoordinate2D?
+    private var hospitalCoordinateId: String?
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -63,6 +67,7 @@ final class RequestStatusViewModel {
     }()
 
     private let service = EmergencyRequestService()
+    private let hospitalService = HospitalService()
     private var pollingTask: Task<Void, Never>?
 
     /// 폴링 주기(초).
@@ -183,10 +188,22 @@ final class RequestStatusViewModel {
             while !Task.isCancelled {
                 if let status = try? await self.service.aiCallStatus(sessionId: sessionId) {
                     self.aiCallStatus = status
+                    if self.aiCallConnected { await self.loadHospitalCoordinate() }
                     if status.status == "COMPLETED" || status.status == "EXHAUSTED" { break }
                 }
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
             }
+        }
+    }
+
+    /// AI 전화가 연결된(현재) 병원의 좌표를 조회한다(지도 표시용).
+    private func loadHospitalCoordinate() async {
+        let targetId = aiCallStatus?.currentHospitalId ?? aiCall?.currentHospitalId
+        guard let targetId, targetId != hospitalCoordinateId else { return }
+        hospitalCoordinateId = targetId
+        if let detail = try? await hospitalService.detail(hospitalId: targetId),
+           let lat = detail.latitude, let lng = detail.longitude {
+            hospitalCoordinate = CLLocationCoordinate2D(latitude: lat, longitude: lng)
         }
     }
 

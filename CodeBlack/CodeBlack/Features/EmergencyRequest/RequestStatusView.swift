@@ -11,8 +11,10 @@ struct RequestStatusView: View {
     let requestId: Int64
     let onBack: () -> Void
 
+    @Environment(LocationProvider.self) private var location
     @State private var viewModel = RequestStatusViewModel()
     @State private var spin: Double = 0
+    @State private var showDetails = false
 
     private typealias Step = RequestStatusViewModel.Step
 
@@ -23,20 +25,34 @@ struct RequestStatusView: View {
                 VStack(spacing: 20) {
                     headline
                     if viewModel.isNoResponse {
-                        // 무응답: AI 발신 카드를 헤드라인 바로 아래에 크게 노출.
                         if viewModel.aiCallStarted {
                             aiCallCard
                         }
-                        noResponseCard
-                        if !viewModel.callCandidates.isEmpty {
-                            callCandidatesCard
+                        if viewModel.aiCallConnected {
+                            // AI 전화 수신 완료: 병원↔내 위치 지도 + 접이식 상세.
+                            routeMap
+                            collapsibleDetails
+                        } else {
+                            noResponseCard
+                            if !viewModel.callCandidates.isEmpty {
+                                callCandidatesCard
+                            }
+                            timelineCard
+                            if !viewModel.hospitals.isEmpty {
+                                hospitalsCard
+                            }
                         }
                     } else if viewModel.isAccepted {
                         acceptedCard
-                    }
-                    timelineCard
-                    if !viewModel.hospitals.isEmpty {
-                        hospitalsCard
+                        timelineCard
+                        if !viewModel.hospitals.isEmpty {
+                            hospitalsCard
+                        }
+                    } else {
+                        timelineCard
+                        if !viewModel.hospitals.isEmpty {
+                            hospitalsCard
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
@@ -49,6 +65,52 @@ struct RequestStatusView: View {
             spin = 360
         }
         .onDisappear { viewModel.stop() }
+    }
+
+    // MARK: 지도 / 접이식 상세
+
+    /// 연결된 병원 ↔ 현재 내 위치 지도.
+    private var routeMap: some View {
+        RouteMapView(patient: location.current, hospital: viewModel.hospitalCoordinate, interactive: false)
+            .frame(height: 200)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16).strokeBorder(AppColor.border, lineWidth: 1)
+            )
+    }
+
+    /// 미응답 마감 카드부터 아래 상세를 접이식으로 묶는다.
+    private var collapsibleDetails: some View {
+        VStack(spacing: 20) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { showDetails.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Text("요청 상세 보기")
+                        .font(.heading8)
+                        .foregroundStyle(AppColor.textPrimary)
+                    Spacer()
+                    Image(systemName: showDetails ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity)
+                .cardStyle()
+            }
+            .buttonStyle(.plain)
+
+            if showDetails {
+                noResponseCard
+                if !viewModel.callCandidates.isEmpty {
+                    callCandidatesCard
+                }
+                timelineCard
+                if !viewModel.hospitals.isEmpty {
+                    hospitalsCard
+                }
+            }
+        }
     }
 
     // MARK: 헤드라인
