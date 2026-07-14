@@ -16,8 +16,7 @@ struct NurseFlowView: View {
     @State private var notifications = NotificationsViewModel()
     @State private var tab: NurseTab = .received
     @State private var showNotifications = false
-    /// 로컬 알림을 이미 발송한 알림 ID(중복 발송 방지).
-    @State private var seenNotificationIds: Set<Int64> = []
+
     /// 로컬 알림을 이미 발송한 요청 ID(중복 발송 방지).
     @State private var seenRequestIds: Set<Int64> = []
 
@@ -77,8 +76,7 @@ struct NurseFlowView: View {
             await viewModel.load(loginId: loginId)
         }
         await notifications.load(loginId: loginId)
-        // 최초 로드분은 이미 지난 알림/요청이므로 발송하지 않고 seen 처리.
-        seenNotificationIds = Set(notifications.notifications.compactMap { $0.notificationId })
+        // 최초 로드분은 이미 지난 요청이므로 발송하지 않고 seen 처리.
         seenRequestIds = Set(viewModel.requests.compactMap { $0.hospitalRequestId })
         await LocalNotifier.shared.requestAuthorization()
         LocalNotifier.shared.setBadge(notifications.unreadCount)
@@ -88,7 +86,6 @@ struct NurseFlowView: View {
             await viewModel.refresh(loginId: loginId)
             await notifications.refresh(loginId: loginId)
             fireNewRequests()
-            fireNewNotifications()
             LocalNotifier.shared.setBadge(notifications.unreadCount)
             syncLiveActivity()
         }
@@ -103,20 +100,6 @@ struct NurseFlowView: View {
                 LocalNotifier.shared.notify(
                     title: "새 환자 수용 요청",
                     body: request.symptomText ?? "새로운 환자 수용 요청이 도착했습니다."
-                )
-            }
-        }
-    }
-
-    /// 새로 도착한 알림에 대해 로컬 알림을 발송한다.
-    private func fireNewNotifications() {
-        for notification in notifications.notifications {
-            guard let id = notification.notificationId, !seenNotificationIds.contains(id) else { continue }
-            seenNotificationIds.insert(id)
-            if notification.read != true {
-                LocalNotifier.shared.notify(
-                    title: notification.title ?? "새 환자 수용 요청",
-                    body: notification.message ?? ""
                 )
             }
         }
