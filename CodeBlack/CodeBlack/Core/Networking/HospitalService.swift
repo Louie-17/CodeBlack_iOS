@@ -22,7 +22,7 @@ struct HospitalService {
         page: Int = 1,
         size: Int = 20
     ) async throws -> [HospitalSearchResponse] {
-        try await client.send(
+        let pageResult: PageResponse<HospitalSearchResponse> = try await client.send(
             .get, "/api/hospitals/search",
             query: [
                 "city": city,
@@ -32,6 +32,7 @@ struct HospitalService {
                 "size": String(size)
             ]
         )
+        return pageResult.items
     }
 
     /// GET /api/hospitals/{hospitalId} — 병원 상세 조회.
@@ -67,6 +68,9 @@ struct HospitalService {
         if !requiredEquipment.isEmpty {
             query["requiredEquipment"] = requiredEquipment.map(\.rawValue).joined(separator: ",")
         }
-        return try await client.send(.get, "/api/hospitals/recommendations", query: query)
+        let page: PageResponse<HospitalRecommendationResponse> = try await client.send(
+            .get, "/api/hospitals/recommendations", query: query
+        )
+        return page.items
     }
 }

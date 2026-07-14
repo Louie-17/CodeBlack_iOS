@@ -21,6 +21,18 @@ struct APIResponse<T: Decodable>: Decodable {
     let code: String?
 }
 
+/// 페이지네이션 응답 래퍼. 목록(recommendations/search 등) 응답의 data 가 이 형태로 온다.
+struct PageResponse<T: Decodable>: Decodable {
+    let content: [T]?
+    let page: Int?
+    let size: Int?
+    let totalCount: Int?
+    let hasNext: Bool?
+
+    /// 항목 배열(없으면 빈 배열).
+    var items: [T] { content ?? [] }
+}
+
 // MARK: - 사용자 역할
 
 /// 사용자 역할(와이어 값). 구급대원 / 간호사(병원 담당자).
