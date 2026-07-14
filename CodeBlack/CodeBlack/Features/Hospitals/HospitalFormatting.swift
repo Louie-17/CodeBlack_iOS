@@ -43,4 +43,31 @@ enum HospitalFormat {
         let total = Int(seconds)
         return String(format: "%02d:%02d", total / 60, total % 60)
     }
+    /// ISO8601 문자열 파싱(소수 초 유무 모두 허용).
+    static func parseISO(_ string: String?) -> Date? {
+        guard let string else { return nil }
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = withFraction.date(from: string) { return date }
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: string)
+    }
+
+    /// 상대 시각. 예: "방금 전", "4분 전", "2시간 전", "3일 전".
+    static func relativeTime(iso: String?, now: Date = Date()) -> String {
+        guard let date = parseISO(iso) else { return "-" }
+        let seconds = max(0, now.timeIntervalSince(date))
+        switch seconds {
+        case ..<60: return "방금 전"
+        case ..<3600: return "\(Int(seconds / 60))분 전"
+        case ..<86400: return "\(Int(seconds / 3600))시간 전"
+        default: return "\(Int(seconds / 86400))일 전"
+        }
+    }
+
+    /// 재생 진행 표기. 예: "00:06 / 00:18".
+    static func playback(_ current: TimeInterval, _ total: TimeInterval) -> String {
+        "\(timecode(current)) / \(timecode(total))"
+    }
 }

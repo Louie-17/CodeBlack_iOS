@@ -142,6 +142,8 @@ struct HospitalRequestResponse: Decodable, Identifiable {
     let createdAt: String?
     /// 상태 확정 시각 (ISO8601)
     let resolvedAt: String?
+    /// 음성 녹음 첨부 여부
+    let hasVoice: Bool?
 
     var id: Int64 { hospitalRequestId ?? -1 }
 }

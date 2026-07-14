@@ -33,4 +33,10 @@ struct HospitalRequestService {
             query: ["loginId": loginId]
         )
     }
+
+    /// 환자 음성 녹음 스트리밍 URL. `GET /api/emergency-requests/{emergencyRequestId}/voice`.
+    /// (hasVoice == true 인 요청에만 유효)
+    func voiceURL(emergencyRequestId: Int64) -> URL? {
+        URL(string: "/api/emergency-requests/\(emergencyRequestId)/voice", relativeTo: AppConfig.baseURL)?.absoluteURL
+    }
 }
