@@ -51,6 +51,9 @@ final class RequestStatusViewModel {
     private(set) var aiCallStarted = false
     /// 이번 세션에서 AI 발신을 이미 시도했는지(중복 POST 방지).
     private var didAttemptAICall = false
+    /// AI 발신 세션 실시간 상태(전화 걸림/받음).
+    private(set) var aiCallStatus: AiCallStatusResponse?
+    private var aiCallStatusTask: Task<Void, Never>?
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -110,6 +113,8 @@ final class RequestStatusViewModel {
     func stop() {
         pollingTask?.cancel()
         pollingTask = nil
+        aiCallStatusTask?.cancel()
+        aiCallStatusTask = nil
     }
 
     private func fetch(requestId: Int64) async {
@@ -148,14 +153,36 @@ final class RequestStatusViewModel {
         // 이미 시작한 요청이면 재발신하지 않는다(재진입).
         if defaults.integer(forKey: AppConfig.aiCallStartedRequestKey) == Int(requestId) {
             aiCallStarted = true
+            // 재진입 — 저장된 세션으로 상태 폴링을 재개한다.
+            let sessionId = defaults.integer(forKey: AppConfig.aiCallSessionKey)
+            if sessionId != 0 { startAICallStatusPolling(sessionId: Int64(sessionId)) }
             return
         }
         if let response = try? await service.startAICall(requestId: requestId) {
             defaults.set(Int(requestId), forKey: AppConfig.aiCallStartedRequestKey)
             aiCall = response
             aiCallStarted = true
+            if let sessionId = response.sessionId {
+                defaults.set(Int(sessionId), forKey: AppConfig.aiCallSessionKey)
+                startAICallStatusPolling(sessionId: sessionId)
+            }
         } else {
             didAttemptAICall = false   // 실패 시 다음 폴링에서 재시도
+        }
+    }
+
+    /// AI 발신 세션 상태를 3초 간격으로 폴링한다. COMPLETED/EXHAUSTED면 종료.
+    private func startAICallStatusPolling(sessionId: Int64) {
+        aiCallStatusTask?.cancel()
+        aiCallStatusTask = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                if let status = try? await self.service.aiCallStatus(sessionId: sessionId) {
+                    self.aiCallStatus = status
+                    if status.status == "COMPLETED" || status.status == "EXHAUSTED" { break }
+                }
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+            }
         }
     }
 

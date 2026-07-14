@@ -52,4 +52,9 @@ struct EmergencyRequestService {
     func startAICall(requestId: Int64) async throws -> AiCallStartResponse {
         try await client.send(.post, "/api/emergency-requests/\(requestId)/ai-call")
     }
+
+    /// GET /api/ai-calls/{sessionId} — AI 발신 세션 실시간 상태(전화 걸림/받음).
+    func aiCallStatus(sessionId: Int64) async throws -> AiCallStatusResponse {
+        try await client.send(.get, "/api/ai-calls/\(sessionId)")
+    }
 }

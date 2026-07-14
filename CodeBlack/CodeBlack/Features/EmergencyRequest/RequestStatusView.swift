@@ -225,7 +225,7 @@ struct RequestStatusView: View {
                     .font(.heading7)
                     .foregroundStyle(AppColor.textPrimary)
                 Spacer()
-                if let status = viewModel.aiCall?.status {
+                if let status = viewModel.aiCallStatus?.status ?? viewModel.aiCall?.status {
                     Text(aiCallStatusLabel(status))
                         .font(.heading9)
                         .foregroundStyle(AppColor.brandGreenDark)
@@ -234,17 +234,29 @@ struct RequestStatusView: View {
                         .background(Capsule().fill(AppColor.brandGreenDark.opacity(0.12)))
                 }
             }
-            Text("수용 가능성이 높은 순으로 병원에 자동으로 전화해 AI가 환자 안내를 진행합니다.")
-                .font(.caption5)
-                .foregroundStyle(AppColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let call = viewModel.aiCall {
-                if let name = call.currentHospitalName {
-                    aiCallInfoRow("현재 발신 병원", name)
+            if viewModel.aiCallStatus?.connected == true {
+                HStack(spacing: 6) {
+                    Image(systemName: "phone.connection.fill")
+                        .font(.system(size: 12))
+                    Text("병원이 전화를 받았습니다")
+                        .font(.heading9)
                 }
-                if let number = call.dialedNumber {
-                    aiCallInfoRow("발신 번호", number)
-                }
+                .foregroundStyle(AppColor.brandGreenDark)
+            } else {
+                Text("수용 가능성이 높은 순으로 병원에 자동으로 전화해 AI가 환자 안내를 진행합니다.")
+                    .font(.caption5)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let name = viewModel.aiCallStatus?.currentHospitalName ?? viewModel.aiCall?.currentHospitalName {
+                aiCallInfoRow("현재 발신 병원", name)
+            }
+            if let number = viewModel.aiCall?.dialedNumber {
+                aiCallInfoRow("발신 번호", number)
+            }
+            if let target = viewModel.aiCallStatus?.targetCount, target > 0 {
+                let idx = min((viewModel.aiCallStatus?.currentIndex ?? 0) + 1, target)
+                aiCallInfoRow("발신 진행", "\(idx) / \(target) 순위")
             }
         }
         .padding(16)
@@ -268,8 +280,8 @@ struct RequestStatusView: View {
     private func aiCallStatusLabel(_ status: String) -> String {
         switch status {
         case "CALLING": return "발신 중"
-        case "COMPLETED": return "완료"
-        case "EXHAUSTED": return "대상 소진"
+        case "COMPLETED": return "연결됨"
+        case "EXHAUSTED": return "모두 미응답"
         default: return status
         }
     }

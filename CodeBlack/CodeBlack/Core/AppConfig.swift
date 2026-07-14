@@ -38,4 +38,7 @@ enum AppConfig {
 
     /// AI 순차 발신을 이미 시작한 요청 ID 저장 키. 재진입 시 재발신 방지. 0 = 없음.
     static let aiCallStartedRequestKey = "codeblack.aiCallStartedRequestId"
+
+    /// 진행 중인 AI 발신 세션 ID 저장 키(재진입 시 상태 폴링 재개용). 0 = 없음.
+    static let aiCallSessionKey = "codeblack.aiCallSessionId"
 }

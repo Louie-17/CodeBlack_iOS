@@ -149,6 +149,23 @@ struct AiCallStartResponse: Decodable {
     let dialedNumber: String?
 }
 
+/// GET /api/ai-calls/{sessionId} 응답. AI 발신 세션 실시간 상태(전화 걸림/받음 조회).
+struct AiCallStatusResponse: Decodable {
+    let sessionId: Int64?
+    /// CALLING=발신/통화중, COMPLETED=병원이 받음, EXHAUSTED=모든 순위 미응답.
+    let status: String?
+    /// 마지막 통화 상태(ringing/answered/completed/no-answer/busy 등).
+    let lastCallStatus: String?
+    /// 전화 연결(수신) 성공 여부. true면 병원이 받음.
+    let connected: Bool?
+    let currentHospitalId: String?
+    let currentHospitalName: String?
+    /// 발신 대상(순위) 병원 수.
+    let targetCount: Int?
+    /// 현재 순위 인덱스(0부터).
+    let currentIndex: Int?
+}
+
 // MARK: - 병원 담당자 관점 요청
 
 /// GET /api/hospital/requests, /{requestId}, POST /{requestId}/accept 응답.

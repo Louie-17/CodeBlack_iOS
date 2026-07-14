@@ -66,8 +66,11 @@ struct ParamedicFlowView: View {
     private func startAICallIfNeeded(requestId: Int64, service: EmergencyRequestService) async {
         let defaults = UserDefaults.standard
         guard defaults.integer(forKey: AppConfig.aiCallStartedRequestKey) != Int(requestId) else { return }
-        if (try? await service.startAICall(requestId: requestId)) != nil {
+        if let response = try? await service.startAICall(requestId: requestId) {
             defaults.set(Int(requestId), forKey: AppConfig.aiCallStartedRequestKey)
+            if let sessionId = response.sessionId {
+                defaults.set(Int(sessionId), forKey: AppConfig.aiCallSessionKey)
+            }
         }
     }
 
