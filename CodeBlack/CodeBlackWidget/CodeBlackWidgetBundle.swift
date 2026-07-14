@@ -2,8 +2,7 @@
 //  CodeBlackWidgetBundle.swift
 //  CodeBlackWidget
 //
-//  위젯 익스텐션 진입점. Live Activity 위젯을 등록한다.
-//  ⚠️ 이 파일들은 앱 타겟이 아니라 별도 "Widget Extension" 타겟에 추가되어야 한다.
+//  위젯 익스텐션 진입점. 간호사 수신 요청 Live Activity를 등록한다.
 //
 
 import WidgetKit
