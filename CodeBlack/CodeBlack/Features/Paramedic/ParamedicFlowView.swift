@@ -34,7 +34,7 @@ struct ParamedicFlowView: View {
         .task(id: activeRequestId) { await pollActiveRequestForAcceptance() }
     }
 
-    /// 활성 요청 상태를 백그라운드 폴링. 수락 시 로컬 알림(요청 ID 단위 1회) 발송 후 종료.
+    /// 활성 요청 상태를 백그라운드 폴링. 어느 화면에 있든 수락 알림/무응답 AI 발신을 자동 처리 후 종료.
     private func pollActiveRequestForAcceptance() async {
         guard activeRequestId != 0 else { return }
         let requestId = Int64(activeRequestId)
@@ -47,12 +47,27 @@ struct ParamedicFlowView: View {
                     LocalNotifier.shared.notifyAcceptedRequest(requestId: requestId, hospitalName: status.acceptedHospitalName)
                     return
                 case .closed:
+                    if status.acceptedHospitalName != nil {
+                        LocalNotifier.shared.notifyAcceptedRequest(requestId: requestId, hospitalName: status.acceptedHospitalName)
+                    } else {
+                        // 수락 없이 마감(전부 미응답) → AI 순차 발신 자동 시작.
+                        await startAICallIfNeeded(requestId: requestId, service: service)
+                    }
                     return
                 default:
                     break
                 }
             }
             try? await Task.sleep(for: .seconds(5))
+        }
+    }
+
+    /// 무응답 마감 시 AI 순차 발신을 자동 시작한다(요청당 1회, 상태화면 트리거와 UserDefaults로 중복 방지).
+    private func startAICallIfNeeded(requestId: Int64, service: EmergencyRequestService) async {
+        let defaults = UserDefaults.standard
+        guard defaults.integer(forKey: AppConfig.aiCallStartedRequestKey) != Int(requestId) else { return }
+        if (try? await service.startAICall(requestId: requestId)) != nil {
+            defaults.set(Int(requestId), forKey: AppConfig.aiCallStartedRequestKey)
         }
     }
 
