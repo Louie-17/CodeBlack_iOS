@@ -9,7 +9,6 @@ import SwiftUI
 
 struct HospitalSearchView: View {
     @Environment(LocationProvider.self) private var location
-    @Environment(AuthViewModel.self) private var auth
     @AppStorage(AppConfig.activeRequestKey) private var activeRequestId: Int = 0
     @State private var viewModel = HospitalListViewModel()
 
@@ -46,14 +45,6 @@ struct HospitalSearchView: View {
                     .foregroundStyle(AppColor.textSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                Button {
-                    auth.logout()
-                } label: {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                .buttonStyle(.plain)
             }
 
             HStack(alignment: .center) {
