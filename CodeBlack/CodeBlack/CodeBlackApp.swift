@@ -13,6 +13,7 @@ struct CodeBlackApp: App {
 
     init() {
         AppFont.register()
+        LocalNotifier.shared.configure()
     }
 
     var body: some Scene {
