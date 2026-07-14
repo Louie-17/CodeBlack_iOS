@@ -272,7 +272,8 @@ struct VoiceInputView: View {
                 symptomText: text,
                 paramedicLoginId: loginId,
                 target: hospital,
-                coordinate: location.current
+                coordinate: location.current,
+                voiceURL: speech.recordedFileURL
             ) {
                 onSubmitted(requestId)
             }

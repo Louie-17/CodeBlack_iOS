@@ -30,7 +30,10 @@ enum APILog {
         if let headers = request.allHTTPHeaderFields, !headers.isEmpty {
             lines.append("┃ headers: \(redacted(headers))")
         }
-        if let body = request.httpBody, !body.isEmpty {
+        if let contentType = request.value(forHTTPHeaderField: "Content-Type"),
+           contentType.contains("multipart/form-data") {
+            lines.append("┃ body: <multipart/form-data, \(request.httpBody?.count ?? 0) bytes>")
+        } else if let body = request.httpBody, !body.isEmpty {
             lines.append("┃ body: \(prettyJSON(body, indent: "┃ "))")
         }
         lines.append("┗━━━")

@@ -26,12 +26,13 @@ final class VoiceInputViewModel {
 
     var isSubmitting: Bool { submitState == .submitting }
 
-    /// 확정된 증상 텍스트로 수용 요청을 생성한다. 성공 시 생성된 requestId를 반환한다.
+    /// 확정된 증상 텍스트(+선택 음성 파일)로 수용 요청을 생성한다. 성공 시 requestId 반환.
     func submit(
         symptomText: String,
         paramedicLoginId: String,
         target: SelectedHospital,
-        coordinate: CLLocationCoordinate2D
+        coordinate: CLLocationCoordinate2D,
+        voiceURL: URL? = nil
     ) async -> Int64? {
         let text = symptomText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
@@ -47,7 +48,8 @@ final class VoiceInputViewModel {
                 latitude: coordinate.latitude,
                 longitude: coordinate.longitude
             )
-            let response = try await service.create(request)
+            let voiceData = voiceURL.flatMap { try? Data(contentsOf: $0) }
+            let response = try await service.create(request, voice: voiceData)
             submitState = .idle
             return response.requestId
         } catch {

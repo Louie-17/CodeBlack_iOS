@@ -93,6 +93,8 @@ struct EmergencyRequestResponse: Decodable {
     let createdAt: String?
     /// 미응답 마감 시각 (ISO8601)
     let respondDeadline: String?
+    /// 음성 녹음 첨부 여부
+    let hasVoice: Bool?
     /// 대상 병원별 상태 목록
     let hospitals: [HospitalRequestSummary]?
 }

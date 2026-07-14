@@ -5,6 +5,7 @@
 //  async/await + URLSession 기반 API 클라이언트.
 //  서버 공통 봉투(APIResponse)를 해석해 성공 시 data 페이로드만 반환한다.
 //  인증은 토큰이 아니라 loginId 기반(X-Login-Id 헤더 / loginId 쿼리)이다.
+//  JSON(send)과 multipart/form-data(sendMultipart) 요청을 지원한다.
 //
 
 import Foundation
@@ -24,13 +25,15 @@ struct APIClient {
     var decoder: JSONDecoder = JSONDecoder()
     var encoder: JSONEncoder = JSONEncoder()
 
-    /// 요청 전송 후 `APIResponse<T>` 봉투를 해석해 `data` 를 반환한다.
-    /// - Parameters:
-    ///   - method: HTTP 메서드
-    ///   - path: baseURL 기준 경로. 경로 파라미터는 호출부에서 인코딩해 끼워 넣는다.
-    ///   - query: 쿼리 파라미터. nil 값 항목은 자동 제외된다.
-    ///   - headers: 추가 헤더(예: `X-Login-Id`).
-    ///   - body: JSON 본문(Encodable).
+    /// multipart 파일 파트.
+    struct FilePart {
+        let name: String
+        let filename: String
+        let mimeType: String
+        let data: Data
+    }
+
+    /// JSON 본문 요청. 성공 시 `APIResponse<T>` 의 data 를 반환한다.
     func send<T: Decodable>(
         _ method: HTTPMethod,
         _ path: String,
@@ -38,6 +41,52 @@ struct APIClient {
         headers: [String: String] = [:],
         body: (any Encodable)? = nil
     ) async throws -> T {
+        var request = try makeRequest(method, path, query: query, headers: headers)
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            do {
+                request.httpBody = try encoder.encode(body)
+            } catch {
+                throw APIError.decoding(error)
+            }
+        }
+        return try await perform(request)
+    }
+
+    /// multipart/form-data 요청. `jsonPart` 는 application/json 파트, `files` 는 바이너리 파트.
+    func sendMultipart<T: Decodable>(
+        _ method: HTTPMethod,
+        _ path: String,
+        jsonPartName: String,
+        jsonPart: any Encodable,
+        files: [FilePart] = [],
+        query: [String: String?] = [:],
+        headers: [String: String] = [:]
+    ) async throws -> T {
+        var request = try makeRequest(method, path, query: query, headers: headers)
+        let boundary = "CodeBlackBoundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let jsonData: Data
+        do {
+            jsonData = try encoder.encode(jsonPart)
+        } catch {
+            throw APIError.decoding(error)
+        }
+        request.httpBody = makeMultipartBody(
+            boundary: boundary, jsonName: jsonPartName, jsonData: jsonData, files: files
+        )
+        return try await perform(request)
+    }
+
+    // MARK: - 내부
+
+    private func makeRequest(
+        _ method: HTTPMethod,
+        _ path: String,
+        query: [String: String?],
+        headers: [String: String]
+    ) throws -> URLRequest {
         guard let resolved = URL(string: path, relativeTo: baseURL),
               var components = URLComponents(url: resolved, resolvingAgainstBaseURL: true) else {
             throw APIError.invalidURL
@@ -58,16 +107,34 @@ struct APIClient {
         for (field, value) in headers {
             request.setValue(value, forHTTPHeaderField: field)
         }
+        return request
+    }
 
-        if let body {
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            do {
-                request.httpBody = try encoder.encode(body)
-            } catch {
-                throw APIError.decoding(error)
-            }
+    private func makeMultipartBody(boundary: String, jsonName: String, jsonData: Data, files: [FilePart]) -> Data {
+        var body = Data()
+        func appendString(_ string: String) {
+            body.append(Data(string.utf8))
         }
 
+        appendString("--\(boundary)\r\n")
+        appendString("Content-Disposition: form-data; name=\"\(jsonName)\"\r\n")
+        appendString("Content-Type: application/json\r\n\r\n")
+        body.append(jsonData)
+        appendString("\r\n")
+
+        for file in files {
+            appendString("--\(boundary)\r\n")
+            appendString("Content-Disposition: form-data; name=\"\(file.name)\"; filename=\"\(file.filename)\"\r\n")
+            appendString("Content-Type: \(file.mimeType)\r\n\r\n")
+            body.append(file.data)
+            appendString("\r\n")
+        }
+
+        appendString("--\(boundary)--\r\n")
+        return body
+    }
+
+    private func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
         APILog.request(request)
         let startedAt = Date()
 

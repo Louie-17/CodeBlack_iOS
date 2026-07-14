@@ -36,6 +36,9 @@ final class SpeechRecognizer {
     private var task: SFSpeechRecognitionTask?
     private var timer: Timer?
     private var startedAt: Date?
+    private var audioFile: AVAudioFile?
+    /// 방금 녹음한 음성 파일 URL(정지 후 유효). 서버 전송용.
+    private(set) var recordedFileURL: URL?
 
     var isRecording: Bool { status == .recording }
 
@@ -49,6 +52,7 @@ final class SpeechRecognizer {
 
         transcript = ""
         elapsed = 0
+        cleanupRecording()
         do {
             try beginSession(with: recognizer)
             status = .recording
@@ -72,6 +76,7 @@ final class SpeechRecognizer {
         task?.cancel()
         teardownEngine()
         stopTimer()
+        cleanupRecording()
         transcript = ""
         elapsed = 0
         audioLevel = 0
@@ -97,9 +102,16 @@ final class SpeechRecognizer {
         let inputNode = audioEngine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
 
+        // 전송용 음성 파일 기록(선택). 실패해도 STT는 계속한다.
+        let fileURL = SpeechRecognizer.makeVoiceFileURL()
+        let recordingFile = try? AVAudioFile(forWriting: fileURL, settings: format.settings)
+        self.audioFile = recordingFile
+        self.recordedFileURL = recordingFile == nil ? nil : fileURL
+
         // 오디오 스레드에서 호출되는 탭. 로컬 캡처로 self 격리 프로퍼티 접근을 피한다.
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             request.append(buffer)
+            try? recordingFile?.write(from: buffer)
             let level = SpeechRecognizer.normalizedLevel(buffer)
             Task { @MainActor [weak self] in self?.audioLevel = level }
         }
@@ -129,7 +141,22 @@ final class SpeechRecognizer {
         task?.finish()
         task = nil
         request = nil
+        audioFile = nil   // 파일 핸들 해제 → 기록 파일 마무리(flush)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    /// 기록 중이던/직전 음성 파일을 삭제하고 참조를 비운다.
+    private func cleanupRecording() {
+        audioFile = nil
+        if let url = recordedFileURL {
+            try? FileManager.default.removeItem(at: url)
+        }
+        recordedFileURL = nil
+    }
+
+    nonisolated private static func makeVoiceFileURL() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("codeblack-voice-\(UUID().uuidString).caf")
     }
 
     // MARK: - 타이머
