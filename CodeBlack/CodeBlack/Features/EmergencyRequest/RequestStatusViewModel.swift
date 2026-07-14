@@ -59,15 +59,19 @@ final class RequestStatusViewModel {
 
     /// 현재 활성 스텝. WAITING → 확인대기, ACCEPTED → 이송준비.
     var currentStep: Step {
+        if isAccepted { return .ready }
+        if isNoResponse { return .waiting }   // 미응답 마감은 이송준비로 진행하지 않음
         switch status?.status {
-        case .accepted: return .ready
-        case .closed: return .ready
+        case .accepted, .closed: return .ready
         case .waiting, .unknown, .none: return .waiting
         }
     }
 
     var acceptedHospitalName: String? { status?.acceptedHospitalName }
-    var isAccepted: Bool { status?.status == .accepted }
+    /// 수락됨(ACCEPTED 또는 수락 병원 확정).
+    var isAccepted: Bool { status?.status == .accepted || status?.acceptedHospitalName != nil }
+    /// 수용 병원 없이 마감(전체 미응답). CLOSED인데 수락 병원 없음.
+    var isNoResponse: Bool { status?.status == .closed && status?.acceptedHospitalName == nil }
     /// 대상 병원별 현황(수락/대기/미응답 등).
     var hospitals: [HospitalRequestSummary] { status?.hospitals ?? [] }
 

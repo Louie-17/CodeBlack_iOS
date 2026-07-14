@@ -28,6 +28,8 @@ struct RequestStatusView: View {
                     }
                     if viewModel.isAccepted {
                         acceptedCard
+                    } else if viewModel.isNoResponse {
+                        noResponseCard
                     }
                 }
                 .padding(.horizontal, 20)
@@ -48,7 +50,7 @@ struct RequestStatusView: View {
         VStack(spacing: 14) {
             statusIcon
                 .frame(height: 96)
-            Text(viewModel.isAccepted ? "병원 수락 완료" : "병원 확인 대기 중")
+            Text(viewModel.isAccepted ? "병원 수락 완료" : viewModel.isNoResponse ? "미응답으로 마감" : "병원 확인 대기 중")
                 .font(.heading3)
                 .foregroundStyle(AppColor.textPrimary)
             Text(headlineSubtitle)
@@ -62,6 +64,9 @@ struct RequestStatusView: View {
         if viewModel.isAccepted {
             return "\(viewModel.acceptedHospitalName ?? "병원")에서 환자를 수용합니다"
         }
+        if viewModel.isNoResponse {
+            return "수용 가능한 응급실의 응답이 없어 요청이 마감되었습니다"
+        }
         return "요청을 전송한 후 대기중입니다"
     }
 
@@ -73,6 +78,13 @@ struct RequestStatusView: View {
                 Image(systemName: "checkmark")
                     .font(.system(size: 40, weight: .bold))
                     .foregroundStyle(AppColor.brandGreen)
+            }
+        } else if viewModel.isNoResponse {
+            ZStack {
+                Circle().fill(AppColor.bgGray2).frame(width: 96, height: 96)
+                Image(systemName: "xmark")
+                    .font(.system(size: 38, weight: .bold))
+                    .foregroundStyle(AppColor.textSecondary)
             }
         } else {
             ZStack {
@@ -172,6 +184,27 @@ struct RequestStatusView: View {
         }
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 14).fill(AppColor.greenBg))
+    }
+
+    // MARK: 미응답 마감
+
+    private var noResponseCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(AppColor.textSecondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("미응답 마감")
+                    .font(.caption6)
+                    .foregroundStyle(AppColor.textSecondary)
+                Text("응답한 병원이 없습니다")
+                    .font(.heading7)
+                    .foregroundStyle(AppColor.textPrimary)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 14).fill(AppColor.bgGray2))
     }
 
     // MARK: 요청 병원 현황
