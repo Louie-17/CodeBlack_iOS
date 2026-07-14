@@ -17,9 +17,6 @@ struct NurseFlowView: View {
     @State private var tab: NurseTab = .received
     @State private var showNotifications = false
 
-    /// 로컬 알림을 이미 발송한 요청 ID(중복 발송 방지).
-    @State private var seenRequestIds: Set<Int64> = []
-
     var body: some View {
         NavigationStack(path: $path) {
             ZStack(alignment: .bottom) {
@@ -76,32 +73,27 @@ struct NurseFlowView: View {
             await viewModel.load(loginId: loginId)
         }
         await notifications.load(loginId: loginId)
-        // 최초 로드분은 이미 지난 요청이므로 발송하지 않고 seen 처리.
-        seenRequestIds = Set(viewModel.requests.compactMap { $0.hospitalRequestId })
         await LocalNotifier.shared.requestAuthorization()
         LocalNotifier.shared.setBadge(notifications.unreadCount)
         syncLiveActivity()
         while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(15))
+            try? await Task.sleep(for: .seconds(6))
             await viewModel.refresh(loginId: loginId)
             await notifications.refresh(loginId: loginId)
-            fireNewRequests()
+            fireRequestReminders()
             LocalNotifier.shared.setBadge(notifications.unreadCount)
             syncLiveActivity()
         }
     }
 
-    /// 새로 도착한 PENDING 요청에 대해 로컬 알림을 발송한다.
-    private func fireNewRequests() {
-        for request in viewModel.requests {
-            guard let id = request.hospitalRequestId, !seenRequestIds.contains(id) else { continue }
-            seenRequestIds.insert(id)
-            if request.status == .pending {
-                LocalNotifier.shared.notify(
-                    title: "새 환자 수용 요청",
-                    body: "응급 환자가 발생했습니다. 수용 가능한 응급실로 판단되어 요청합니다."
-                )
-            }
+    /// 대기 중(PENDING) 요청 전부에 로컬 알림을 발송한다.
+    /// 6초 폴링마다 호출 → 수락되거나(=PENDING 아님) 만료(NO_RESPONSE)되면 자동으로 멈춘다.
+    private func fireRequestReminders() {
+        for request in viewModel.requests where request.status == .pending {
+            LocalNotifier.shared.notify(
+                title: "새 환자 수용 요청",
+                body: "응급 환자가 발생했습니다. 수용 가능한 응급실로 판단되어 요청합니다."
+            )
         }
     }
 
