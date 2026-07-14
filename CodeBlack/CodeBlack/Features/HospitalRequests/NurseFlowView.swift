@@ -13,7 +13,9 @@ struct NurseFlowView: View {
     @State private var path = NavigationPath()
     @State private var hospital = NurseHospitalInfo()
     @State private var viewModel = HospitalRequestListViewModel()
+    @State private var notifications = NotificationsViewModel()
     @State private var tab: NurseTab = .received
+    @State private var showNotifications = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -21,9 +23,9 @@ struct NurseFlowView: View {
                 Group {
                     switch tab {
                     case .received:
-                        NurseRequestsView(kind: .received, viewModel: viewModel, onSelect: openDetail, onLogout: logout)
+                        NurseRequestsView(kind: .received, viewModel: viewModel, onSelect: openDetail, onLogout: logout, unreadCount: notifications.unreadCount, onBell: { showNotifications = true })
                     case .completed:
-                        NurseRequestsView(kind: .completed, viewModel: viewModel, onSelect: openDetail, onLogout: logout)
+                        NurseRequestsView(kind: .completed, viewModel: viewModel, onSelect: openDetail, onLogout: logout, unreadCount: notifications.unreadCount, onBell: { showNotifications = true })
                     }
                 }
                 NurseGlassTabBar(selected: $tab)
@@ -36,6 +38,16 @@ struct NurseFlowView: View {
             }
         }
         .environment(hospital)
+        .sheet(isPresented: $showNotifications) {
+            if let loginId = auth.loginId {
+                NurseNotificationsView(
+                    viewModel: notifications,
+                    loginId: loginId,
+                    onOpenRequest: openRequestFromNotification
+                )
+                .presentationDetents([.large])
+            }
+        }
         .task { await bootstrap() }
     }
 
@@ -43,22 +55,32 @@ struct NurseFlowView: View {
         path.append(NurseRoute.detail(item))
     }
 
+    /// 알림 → 해당 병원요청 상세로 이동(목록에 있으면).
+    private func openRequestFromNotification(_ hospitalRequestId: Int64) {
+        showNotifications = false
+        if let request = viewModel.requests.first(where: { $0.hospitalRequestId == hospitalRequestId }) {
+            path.append(NurseRoute.detail(NurseRequestItem(from: request)))
+        }
+    }
+
     private func logout() {
         NurseLiveActivityManager.shared.end()
         auth.logout()
     }
 
-    /// 소속 병원 정보 로드 후, 요청 목록 폴링 + Live Activity 동기화.
+    /// 소속 병원 정보 로드 후, 요청/알림 폴링 + Live Activity 동기화.
     private func bootstrap() async {
         await hospital.load(hospitalId: auth.actor?.hospitalId, fallbackName: auth.actor?.hospitalName)
         guard let loginId = auth.loginId else { return }
         if case .idle = viewModel.loadState {
             await viewModel.load(loginId: loginId)
         }
+        await notifications.load(loginId: loginId)
         syncLiveActivity()
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(15))
             await viewModel.refresh(loginId: loginId)
+            await notifications.refresh(loginId: loginId)
             syncLiveActivity()
         }
     }

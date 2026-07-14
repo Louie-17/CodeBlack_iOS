@@ -18,6 +18,10 @@ struct NurseRequestsView: View {
 
     let onSelect: (NurseRequestItem) -> Void
     let onLogout: () -> Void
+    /// 안 읽은 알림 수(헤더 배지).
+    let unreadCount: Int
+    /// 알림 버튼 탭 → 알림 시트 열기.
+    let onBell: () -> Void
 
     private var title: String { kind == .received ? "수신된 요청" : "완료 요청" }
     private var emptyText: String { kind == .received ? "수신된 요청이 없습니다" : "완료된 요청이 없습니다" }
@@ -49,6 +53,24 @@ struct NurseRequestsView: View {
                     .font(.caption4)
                     .foregroundStyle(AppColor.textSecondary)
                 Spacer()
+                Button(action: onBell) {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(AppColor.textSecondary)
+                            .frame(width: 26, height: 26)
+                        if unreadCount > 0 {
+                            Text(unreadCount > 99 ? "99+" : "\(unreadCount)")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Capsule().fill(AppColor.emergencyRed))
+                                .offset(x: 4, y: -4)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
                 Button {
                     NurseLiveActivityManager.shared.end()
                     onLogout()
