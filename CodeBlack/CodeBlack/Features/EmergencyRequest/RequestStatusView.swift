@@ -20,22 +20,23 @@ struct RequestStatusView: View {
         VStack(spacing: 0) {
             BackBar(title: "요청 상태", onBack: onBack)
             ScrollView {
-                VStack(spacing: 28) {
+                VStack(spacing: 20) {
                     headline
-                    timelineCard
-                    if !viewModel.hospitals.isEmpty {
-                        hospitalsCard
-                    }
-                    if viewModel.isAccepted {
-                        acceptedCard
-                    } else if viewModel.isNoResponse {
-                        noResponseCard
+                    if viewModel.isNoResponse {
+                        // 무응답: AI 발신 카드를 헤드라인 바로 아래에 크게 노출.
                         if viewModel.aiCallStarted {
                             aiCallCard
                         }
+                        noResponseCard
                         if !viewModel.callCandidates.isEmpty {
                             callCandidatesCard
                         }
+                    } else if viewModel.isAccepted {
+                        acceptedCard
+                    }
+                    timelineCard
+                    if !viewModel.hospitals.isEmpty {
+                        hospitalsCard
                     }
                 }
                 .padding(.horizontal, 20)
@@ -261,7 +262,12 @@ struct RequestStatusView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardStyle()
+        .background(
+            RoundedRectangle(cornerRadius: 16).fill(AppColor.greenBg)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16).strokeBorder(AppColor.brandGreen, lineWidth: 1.5)
+        )
     }
 
     private func aiCallInfoRow(_ title: String, _ value: String) -> some View {
