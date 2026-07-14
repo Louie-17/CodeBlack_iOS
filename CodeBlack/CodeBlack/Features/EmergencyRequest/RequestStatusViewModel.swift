@@ -85,6 +85,10 @@ final class RequestStatusViewModel {
     var isNoResponse: Bool { status?.status == .closed && status?.acceptedHospitalName == nil }
     /// 대상 병원별 현황(수락/대기/미응답 등).
     var hospitals: [HospitalRequestSummary] { status?.hospitals ?? [] }
+    /// AI 순차 발신 중 병원이 전화를 받음(연결 성공/통화 완료).
+    var aiCallConnected: Bool {
+        aiCallStatus?.connected == true || aiCallStatus?.status == "COMPLETED"
+    }
 
     /// 요청 상태 폴링 시작. 수락/종료 시 자동 중단.
     func startPolling(requestId: Int64) {

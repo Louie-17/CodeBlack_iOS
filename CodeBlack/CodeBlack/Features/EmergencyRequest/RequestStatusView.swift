@@ -57,7 +57,7 @@ struct RequestStatusView: View {
         VStack(spacing: 14) {
             statusIcon
                 .frame(height: 96)
-            Text(viewModel.isAccepted ? "병원 수락 완료" : viewModel.isNoResponse ? "미응답으로 마감" : "병원 확인 대기 중")
+            Text(headlineTitle)
                 .font(.heading3)
                 .foregroundStyle(AppColor.textPrimary)
             Text(headlineSubtitle)
@@ -67,12 +67,22 @@ struct RequestStatusView: View {
         }
     }
 
+    private var headlineTitle: String {
+        if viewModel.isAccepted { return "병원 수락 완료" }
+        if viewModel.isNoResponse {
+            return viewModel.aiCallConnected ? "AI 전화 수신 완료" : "미응답으로 마감"
+        }
+        return "병원 확인 대기 중"
+    }
+
     private var headlineSubtitle: String {
         if viewModel.isAccepted {
             return "\(viewModel.acceptedHospitalName ?? "병원")에서 환자를 수용합니다"
         }
         if viewModel.isNoResponse {
-            return "수용 가능한 응급실의 응답이 없어 요청이 마감되었습니다"
+            return viewModel.aiCallConnected
+                ? "AI 전화로 병원과 연결되었습니다"
+                : "수용 가능한 응급실의 응답이 없어 요청이 마감되었습니다"
         }
         return "요청을 전송한 후 대기중입니다"
     }
@@ -88,10 +98,12 @@ struct RequestStatusView: View {
             }
         } else if viewModel.isNoResponse {
             ZStack {
-                Circle().fill(AppColor.bgGray2).frame(width: 96, height: 96)
-                Image(systemName: "xmark")
-                    .font(.system(size: 38, weight: .bold))
-                    .foregroundStyle(AppColor.textSecondary)
+                Circle()
+                    .fill(viewModel.aiCallConnected ? AppColor.greenBg : AppColor.bgGray2)
+                    .frame(width: 96, height: 96)
+                Image(systemName: viewModel.aiCallConnected ? "phone.fill" : "xmark")
+                    .font(.system(size: viewModel.aiCallConnected ? 36 : 38, weight: .bold))
+                    .foregroundStyle(viewModel.aiCallConnected ? AppColor.brandGreen : AppColor.textSecondary)
             }
         } else {
             ZStack {
