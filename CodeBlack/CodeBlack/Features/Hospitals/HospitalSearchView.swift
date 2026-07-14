@@ -131,10 +131,10 @@ struct HospitalSearchView: View {
                                 hospital: hospital,
                                 viewModel: viewModel,
                                 isSelected: isSelected(item),
-                                onInfo: { onSelect(item) }
+                                onToggle: { toggle(item) }
                             )
                             .contentShape(Rectangle())
-                            .onTapGesture { toggle(item) }
+                            .onTapGesture { onSelect(item) }
                         }
                     }
                     .padding(.horizontal, 20)
@@ -227,8 +227,8 @@ private struct HospitalCard: View {
     let viewModel: HospitalListViewModel
     /// 요청 대상 선택 여부.
     let isSelected: Bool
-    /// 정보(ⓘ) 버튼 탭 → 상세 화면.
-    let onInfo: () -> Void
+    /// 선택 버튼 탭 → 요청 대상 토글.
+    let onToggle: () -> Void
 
     /// 표시할 가용병상 수(상세 API 정확값 우선). 셀 body에서 직접 읽어 관찰한다.
     private var availableBeds: Int? { viewModel.displayBeds(for: hospital) }
@@ -237,24 +237,13 @@ private struct HospitalCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 10) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(isSelected ? AppColor.brandGreen : AppColor.border)
+            HStack(alignment: .top) {
                 Text(hospital.name ?? "이름 미상")
                     .font(.heading7)
                     .foregroundStyle(AppColor.textPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 CongestionBadge(congestion: congestion)
-                Button(action: onInfo) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 18))
-                        .foregroundStyle(AppColor.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
             }
 
             HStack(spacing: 6) {
@@ -273,27 +262,42 @@ private struct HospitalCard: View {
 
             BedGauge(availableBeds: availableBeds)
 
-            if hospital.recommendationScore != nil || !(hospital.equipmentTypes ?? []).isEmpty {
-                HStack(spacing: 6) {
-                    if let score = hospital.recommendationScore {
-                        AIRecommendBadge(score: score)
-                    }
-                    ForEach((hospital.equipmentTypes ?? []).prefix(3), id: \.self) { equipment in
-                        TagChip(text: HospitalFormat.equipmentLabel(equipment))
-                    }
-                    Spacer()
+            HStack(spacing: 6) {
+                if let score = hospital.recommendationScore {
+                    AIRecommendBadge(score: score)
                 }
+                ForEach((hospital.equipmentTypes ?? []).prefix(2), id: \.self) { equipment in
+                    TagChip(text: HospitalFormat.equipmentLabel(equipment))
+                }
+                Spacer(minLength: 8)
+                selectButton
             }
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(isSelected ? AppColor.greenBg : AppColor.bgWhite)
+                .fill(AppColor.bgWhite)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .strokeBorder(isSelected ? AppColor.brandGreen : AppColor.border, lineWidth: isSelected ? 1.5 : 1)
         )
         .task { await viewModel.loadAccurateBeds(for: hospital.hospitalId) }
+    }
+
+    private var selectButton: some View {
+        Button(action: onToggle) {
+            HStack(spacing: 4) {
+                Image(systemName: isSelected ? "checkmark" : "plus")
+                    .font(.system(size: 11, weight: .bold))
+                Text(isSelected ? "선택됨" : "선택")
+                    .font(.heading9)
+            }
+            .foregroundStyle(isSelected ? .white : AppColor.brandGreenDark)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(isSelected ? AppColor.brandGreen : AppColor.greenBg2))
+        }
+        .buttonStyle(.plain)
     }
 }
