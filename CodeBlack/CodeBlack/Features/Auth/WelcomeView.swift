@@ -41,8 +41,10 @@ struct WelcomeView: View {
                 Button(action: onSignup) {
                     Text("회원가입")
                         .font(.heading8)
-                        .underline()
                         .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(Capsule().fill(.white.opacity(0.22)))
                 }
                 .buttonStyle(.plain)
             }
@@ -59,9 +61,11 @@ struct WelcomeView: View {
 
             Spacer(minLength: 0)
 
-            Text("🚑")
-                .font(.system(size: 120))
-                .frame(maxWidth: .infinity, alignment: .center)
+            Image("WelcomeAmbulance")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
                 .padding(.bottom, 8)
         }
         .padding(.horizontal, 24)
