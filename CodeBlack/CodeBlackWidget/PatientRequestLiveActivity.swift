@@ -47,10 +47,6 @@ struct PatientRequestLiveActivity: Widget {
                             Spacer(minLength: 0)
                         }
                         infoRow(context)
-                        Text(context.state.symptomText)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -89,12 +85,6 @@ private struct LockScreenView: View {
                 }
 
                 infoRow(context)
-
-                Text(context.state.symptomText)
-                    .font(.body)
-                    .foregroundStyle(.white.opacity(0.9))
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 4)
 
