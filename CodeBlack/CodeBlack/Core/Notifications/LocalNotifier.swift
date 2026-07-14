@@ -45,6 +45,17 @@ final class LocalNotifier: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().setBadgeCount(max(0, count))
     }
 
+    /// 요청 수락 알림. 요청 ID 단위로 1회만 발송(화면 무관 중복 방지).
+    func notifyAcceptedRequest(requestId: Int64, hospitalName: String?) {
+        let defaults = UserDefaults.standard
+        guard defaults.integer(forKey: AppConfig.notifiedAcceptedRequestKey) != Int(requestId) else { return }
+        defaults.set(Int(requestId), forKey: AppConfig.notifiedAcceptedRequestKey)
+        notify(
+            title: "이송 준비 완료",
+            body: "\(hospitalName ?? "병원")에서 환자를 수용합니다. 이송을 준비하세요."
+        )
+    }
+
     // MARK: - UNUserNotificationCenterDelegate
 
     /// 포그라운드에서도 배너/소리 표시.

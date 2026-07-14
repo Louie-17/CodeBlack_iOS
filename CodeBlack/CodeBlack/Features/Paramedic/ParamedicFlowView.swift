@@ -30,6 +30,30 @@ struct ParamedicFlowView: View {
             }
         }
         .environment(location)
+        // 어느 화면에 있든(메인 포함) 활성 요청의 수락을 감지해 알림을 띄운다.
+        .task(id: activeRequestId) { await pollActiveRequestForAcceptance() }
+    }
+
+    /// 활성 요청 상태를 백그라운드 폴링. 수락 시 로컬 알림(요청 ID 단위 1회) 발송 후 종료.
+    private func pollActiveRequestForAcceptance() async {
+        guard activeRequestId != 0 else { return }
+        let requestId = Int64(activeRequestId)
+        let service = EmergencyRequestService()
+        await LocalNotifier.shared.requestAuthorization()
+        while !Task.isCancelled {
+            if let status = try? await service.status(requestId: requestId) {
+                switch status.status {
+                case .accepted:
+                    LocalNotifier.shared.notifyAcceptedRequest(requestId: requestId, hospitalName: status.acceptedHospitalName)
+                    return
+                case .closed:
+                    return
+                default:
+                    break
+                }
+            }
+            try? await Task.sleep(for: .seconds(5))
+        }
     }
 
     @ViewBuilder
