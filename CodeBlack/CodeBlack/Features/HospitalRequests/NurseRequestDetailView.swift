@@ -19,6 +19,7 @@ struct NurseRequestDetailView: View {
     @State private var viewModel = HospitalRequestDetailViewModel()
     @State private var audio = AudioPlayer()
     @State private var placeName: String?
+    @State private var showFullMap = false
 
     private let requestService = HospitalRequestService()
 
@@ -148,53 +149,25 @@ struct NurseRequestDetailView: View {
     // MARK: 지도
 
     private var mapCard: some View {
-        Map(initialPosition: .region(mapRegion)) {
-            if let patient = patientCoordinate {
-                Marker("환자", systemImage: "cross.case.fill", coordinate: patient)
-                    .tint(AppColor.emergencyRed)
-            }
-            if let hospitalCoord = hospital.coordinate {
-                Marker("병원", systemImage: "building.2.fill", coordinate: hospitalCoord)
-                    .tint(AppColor.brandGreen)
-            }
-            if let patient = patientCoordinate, let hospitalCoord = hospital.coordinate {
-                MapPolyline(coordinates: [patient, hospitalCoord])
-                    .stroke(AppColor.brandGreen, lineWidth: 4)
-            }
-        }
-        .frame(height: 200)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16).strokeBorder(AppColor.border, lineWidth: 1)
-        )
-        .allowsHitTesting(false)
-    }
-
-    private var mapRegion: MKCoordinateRegion {
-        let points = [patientCoordinate, hospital.coordinate].compactMap { $0 }
-        guard let first = points.first else {
-            return MKCoordinateRegion(
-                center: LocationProvider.fallback,
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+        RouteMapView(patient: patientCoordinate, hospital: hospital.coordinate, interactive: false)
+            .frame(height: 200)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16).strokeBorder(AppColor.border, lineWidth: 1)
             )
-        }
-        guard points.count == 2 else {
-            return MKCoordinateRegion(
-                center: first,
-                span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
-            )
-        }
-        let lats = points.map(\.latitude)
-        let lngs = points.map(\.longitude)
-        let center = CLLocationCoordinate2D(
-            latitude: (lats.min()! + lats.max()!) / 2,
-            longitude: (lngs.min()! + lngs.max()!) / 2
-        )
-        let span = MKCoordinateSpan(
-            latitudeDelta: max(0.01, (lats.max()! - lats.min()!) * 1.6),
-            longitudeDelta: max(0.01, (lngs.max()! - lngs.min()!) * 1.6)
-        )
-        return MKCoordinateRegion(center: center, span: span)
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(AppColor.bgWhite.opacity(0.9)))
+                    .padding(10)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 16))
+            .onTapGesture { showFullMap = true }
+            .fullScreenCover(isPresented: $showFullMap) {
+                FullRouteMapView(patient: patientCoordinate, hospital: hospital.coordinate)
+            }
     }
 
     // MARK: 하단 수락
