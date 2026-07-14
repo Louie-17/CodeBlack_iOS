@@ -42,3 +42,9 @@ struct NurseRequestItem: Hashable {
 enum NurseRoute: Hashable {
     case detail(NurseRequestItem)
 }
+
+/// 간호사 하단 탭.
+enum NurseTab: Hashable {
+    case completed   // 완료 요청(처리됨)
+    case received    // 받은 요청(대기)
+}
