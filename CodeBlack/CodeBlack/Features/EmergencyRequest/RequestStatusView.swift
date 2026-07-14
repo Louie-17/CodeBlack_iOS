@@ -2,41 +2,40 @@
 //  RequestStatusView.swift
 //  CodeBlack
 //
-//  화면 5 — 요청 상태(폴링). 진행 스텝(전송완료→확인대기→이송준비) + 수락 병원.
+//  화면 — 요청 상태(폴링). 상단 back + 진행 세로 타임라인.
 //
 
 import SwiftUI
 
 struct RequestStatusView: View {
     let requestId: Int64
-    /// 메인(검색)으로 돌아가기.
-    let onDone: () -> Void
+    let onBack: () -> Void
 
     @State private var viewModel = RequestStatusViewModel()
+    @State private var spin: Double = 0
+
+    private typealias Step = RequestStatusViewModel.Step
 
     var body: some View {
         VStack(spacing: 0) {
+            BackBar(title: "요청 상태", onBack: onBack)
             ScrollView {
                 VStack(spacing: 28) {
                     headline
-                    stepIndicator
+                    timelineCard
                     if viewModel.isAccepted {
                         acceptedCard
                     }
-                    if let error = viewModel.errorMessage {
-                        Text(error)
-                            .font(.caption5)
-                            .foregroundStyle(AppColor.emergencyRed)
-                            .multilineTextAlignment(.center)
-                    }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 40)
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
             }
-            bottomBar
         }
         .background(AppColor.bgGray)
-        .task { viewModel.startPolling(requestId: requestId) }
+        .task {
+            viewModel.startPolling(requestId: requestId)
+            spin = 360
+        }
         .onDisappear { viewModel.stop() }
     }
 
@@ -44,94 +43,114 @@ struct RequestStatusView: View {
 
     private var headline: some View {
         VStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(viewModel.isAccepted ? AppColor.greenBg : AppColor.greenBg2)
-                    .frame(width: 96, height: 96)
-                if viewModel.isAccepted {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(AppColor.systemGreen)
-                } else {
-                    ProgressView()
-                        .controlSize(.large)
-                        .tint(AppColor.brandGreen)
-                }
-            }
-
+            statusIcon
+                .frame(height: 96)
             Text(viewModel.isAccepted ? "병원 수락 완료" : "병원 확인 대기 중")
                 .font(.heading3)
                 .foregroundStyle(AppColor.textPrimary)
-
-            Text(viewModel.isAccepted
-                 ? "\(viewModel.acceptedHospitalName ?? "병원")에서 환자를 수용합니다."
-                 : "가장 빨리 수용 가능한 병원을 확인하고 있습니다.")
+            Text(headlineSubtitle)
                 .font(.body5)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
         }
     }
 
-    // MARK: 진행 스텝
-
-    private var stepIndicator: some View {
-        HStack(alignment: .top, spacing: 0) {
-            ForEach(RequestStatusViewModel.Step.allCases, id: \.rawValue) { step in
-                stepNode(step)
-                if step != RequestStatusViewModel.Step.allCases.last {
-                    connector(after: step)
-                }
-            }
+    private var headlineSubtitle: String {
+        if viewModel.isAccepted {
+            return "\(viewModel.acceptedHospitalName ?? "병원")에서 환자를 수용합니다"
         }
+        return "요청을 전송한 후 대기중입니다"
     }
 
-    private func stepNode(_ step: RequestStatusViewModel.Step) -> some View {
-        let state = stepState(step)
-        return VStack(spacing: 8) {
+    @ViewBuilder
+    private var statusIcon: some View {
+        if viewModel.isAccepted {
+            ZStack {
+                Circle().fill(AppColor.greenBg).frame(width: 96, height: 96)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 40, weight: .bold))
+                    .foregroundStyle(AppColor.brandGreen)
+            }
+        } else {
             ZStack {
                 Circle()
-                    .fill(state == .pending ? AppColor.bgGray2 : AppColor.brandGreen)
-                    .frame(width: 36, height: 36)
-                if state == .done {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                } else if state == .active {
-                    Circle().fill(.white).frame(width: 12, height: 12)
-                } else {
-                    Text("\(step.rawValue + 1)")
-                        .font(.heading9)
-                        .foregroundStyle(AppColor.textSecondary)
+                    .trim(from: 0, to: 0.75)
+                    .stroke(AppColor.brandGreen, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                    .frame(width: 88, height: 88)
+                    .rotationEffect(.degrees(spin))
+                    .animation(.linear(duration: 2).repeatForever(autoreverses: false), value: spin)
+                Image(systemName: "location.north.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(AppColor.brandGreen)
+                    .rotationEffect(.degrees(45))
+            }
+        }
+    }
+
+    // MARK: 타임라인
+
+    private var timelineCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            stepRow(.sent)
+            stepRow(.waiting)
+            stepRow(.ready, isLast: true)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
+    }
+
+    private func stepRow(_ step: Step, isLast: Bool = false) -> some View {
+        let state = stepState(step)
+        return HStack(alignment: .top, spacing: 14) {
+            VStack(spacing: 0) {
+                dot(state)
+                if !isLast {
+                    Rectangle()
+                        .fill(connectorColor(step))
+                        .frame(width: 2)
+                        .frame(maxHeight: .infinity)
                 }
             }
-            Text(step.title)
-                .font(.caption5)
-                .foregroundStyle(state == .pending ? AppColor.textSecondary : AppColor.textPrimary)
+            .frame(width: 26)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(step.title)
+                    .font(.heading7)
+                    .foregroundStyle(titleColor(state))
+                Text(step == .sent ? (viewModel.sentTime ?? step.subtitle) : step.subtitle)
+                    .font(.caption5)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .padding(.bottom, isLast ? 0 : 22)
+
+            Spacer()
         }
-        .frame(width: 72)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func connector(after step: RequestStatusViewModel.Step) -> some View {
-        Rectangle()
-            .fill(stepState(step) == .done ? AppColor.brandGreen : AppColor.border)
-            .frame(height: 2)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 17)
-    }
-
-    private enum StepState { case done, active, pending }
-
-    private func stepState(_ step: RequestStatusViewModel.Step) -> StepState {
-        let current = viewModel.currentStep.rawValue
-        if step.rawValue < current { return .done }
-        if step.rawValue == current {
-            // 수락(이송준비)에 도달하면 마지막 스텝도 완료로 표시.
-            return viewModel.isAccepted && step == .ready ? .done : .active
+    @ViewBuilder
+    private func dot(_ state: StepState) -> some View {
+        switch state {
+        case .done:
+            ZStack {
+                Circle().fill(AppColor.brandGreen).frame(width: 26, height: 26)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+        case .active:
+            Circle()
+                .strokeBorder(AppColor.brandGreen, lineWidth: 3)
+                .frame(width: 26, height: 26)
+        case .pending:
+            Circle()
+                .strokeBorder(AppColor.separator, lineWidth: 2)
+                .frame(width: 26, height: 26)
         }
-        return .pending
     }
 
-    // MARK: 수락 병원 카드
+    // MARK: 수락 병원
 
     private var acceptedCard: some View {
         HStack(spacing: 12) {
@@ -152,26 +171,32 @@ struct RequestStatusView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(AppColor.greenBg))
     }
 
-    // MARK: 하단
+    // MARK: 스텝 상태
 
-    private var bottomBar: some View {
-        VStack(spacing: 0) {
-            Divider().background(AppColor.border)
-            VStack(spacing: 10) {
-                CTAButton(title: viewModel.isAccepted ? "이송 시작" : "메인으로", style: .green) {
-                    viewModel.stop()
-                    onDone()
-                }
-                if !viewModel.isAccepted {
-                    CTAButton(title: "요청 취소", style: .outlineRed) {
-                        viewModel.stop()
-                        onDone()
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+    private enum StepState { case done, active, pending }
+
+    private func stepState(_ step: Step) -> StepState {
+        let current = viewModel.currentStep.rawValue
+        if step.rawValue < current { return .done }
+        if step.rawValue == current {
+            return viewModel.isAccepted && step == .ready ? .done : .active
         }
-        .background(AppColor.bgWhite)
+        return .pending
+    }
+
+    private func titleColor(_ state: StepState) -> Color {
+        switch state {
+        case .done: return AppColor.textPrimary
+        case .active: return AppColor.brandGreenDark
+        case .pending: return AppColor.textSecondary
+        }
+    }
+
+    private func connectorColor(_ step: Step) -> Color {
+        switch stepState(step) {
+        case .done: return AppColor.brandGreen
+        case .active: return AppColor.brandGreen.opacity(0.35)
+        case .pending: return AppColor.border
+        }
     }
 }

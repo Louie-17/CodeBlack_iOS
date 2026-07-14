@@ -29,4 +29,7 @@ enum AppConfig {
         /// 세션 유효기간(초). 기본 30일.
         static let validity: TimeInterval = 60 * 60 * 24 * 30
     }
+
+    /// 진행 중인 응급 요청 ID 저장 키(AppStorage/UserDefaults). 0 = 없음.
+    static let activeRequestKey = "codeblack.activeEmergencyRequestId"
 }

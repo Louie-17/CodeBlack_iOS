@@ -10,11 +10,13 @@ import SwiftUI
 struct HospitalSearchView: View {
     @Environment(LocationProvider.self) private var location
     @Environment(AuthViewModel.self) private var auth
+    @AppStorage(AppConfig.activeRequestKey) private var activeRequestId: Int = 0
     @State private var viewModel = HospitalListViewModel()
 
     /// 병원 선택 시 상세로 이동.
     let onSelect: (SelectedHospital) -> Void
-    /// 병원 선택 시 상세로 이동은 onSelect 로 처리.
+    /// 현재 상태 보기 → 진행 중인 요청 상태 화면으로.
+    let onShowStatus: (Int64) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,33 +36,45 @@ struct HospitalSearchView: View {
     // MARK: 헤더
 
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("가까운 응급실 찾기")
-                    .font(.heading4)
-                    .foregroundStyle(AppColor.textPrimary)
-                HStack(spacing: 4) {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 11))
-                    Text(location.placeName ?? "위치 확인 중…")
-                        .font(.caption6)
-                }
-                .foregroundStyle(AppColor.textSecondary)
-            }
-            Spacer(minLength: 8)
-            Button {
-                auth.logout()
-            } label: {
-                Text("로그아웃")
-                    .font(.caption6)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 4) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(AppColor.brandGreen)
+                Text("현재 위치 · \(location.placeName ?? "확인 중…")")
+                    .font(.caption4)
                     .foregroundStyle(AppColor.textSecondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .overlay(
-                        Capsule().strokeBorder(AppColor.border, lineWidth: 1)
-                    )
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Button {
+                    auth.logout()
+                } label: {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+
+            HStack(alignment: .center) {
+                Text("가까운 병원 찾기")
+                    .font(.heading3)
+                    .foregroundStyle(AppColor.textPrimary)
+                Spacer(minLength: 8)
+                if activeRequestId != 0 {
+                    Button {
+                        onShowStatus(Int64(activeRequestId))
+                    } label: {
+                        Text("현재 상태 보기")
+                            .font(.heading8)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(AppColor.brandGreen))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)

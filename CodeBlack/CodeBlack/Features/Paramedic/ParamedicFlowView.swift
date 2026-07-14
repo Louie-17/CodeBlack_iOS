@@ -10,11 +10,15 @@ import SwiftUI
 struct ParamedicFlowView: View {
     @State private var path = NavigationPath()
     @State private var location = LocationProvider()
+    @AppStorage(AppConfig.activeRequestKey) private var activeRequestId: Int = 0
 
     var body: some View {
         NavigationStack(path: $path) {
             HospitalSearchView(
-                onSelect: { path.append(ParamedicRoute.detail($0)) }
+                onSelect: { path.append(ParamedicRoute.detail($0)) },
+                onShowStatus: { requestId in
+                    path.append(ParamedicRoute.requestStatus(requestId: requestId))
+                }
             )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: ParamedicRoute.self) { route in
@@ -39,13 +43,16 @@ struct ParamedicFlowView: View {
                 hospital: hospital,
                 onBack: { path.removeLast() },
                 onSubmitted: { requestId in
+                    // 생성된 요청을 활성 요청으로 저장하고, 스택을 초기화한 뒤 상태 화면을 depth 1로 띄운다.
+                    activeRequestId = Int(requestId)
+                    path = NavigationPath()
                     path.append(ParamedicRoute.requestStatus(requestId: requestId))
                 }
             )
         case .requestStatus(let requestId):
             RequestStatusView(
                 requestId: requestId,
-                onDone: { path = NavigationPath() }
+                onBack: { path.removeLast() }
             )
         }
     }
