@@ -262,7 +262,8 @@ struct VoiceInputView: View {
 
     private func restart() {
         draft = ""
-        Task { await speech.start() }
+        // 바로 녹음하지 않고 idle(마이크 버튼) 화면으로 돌아간다.
+        speech.cancel()
     }
 
     private func confirm(text: String) {
