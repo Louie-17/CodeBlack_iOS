@@ -27,6 +27,6 @@ struct SelectedHospital: Hashable {
 /// 구급대원 플로우 라우트. (검색 → 상세 → 음성입력 → 요청상태)
 enum ParamedicRoute: Hashable {
     case detail(SelectedHospital)
-    case voiceInput(SelectedHospital)
+    case voiceInput([SelectedHospital])
     case requestStatus(requestId: Int64)
 }

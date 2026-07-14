@@ -11,9 +11,13 @@ struct HospitalSearchView: View {
     @Environment(LocationProvider.self) private var location
     @AppStorage(AppConfig.activeRequestKey) private var activeRequestId: Int = 0
     @State private var viewModel = HospitalListViewModel()
+    /// 요청 대상으로 선택한 병원들(순서 유지, 첫 항목이 우선 병원).
+    @State private var selected: [SelectedHospital] = []
 
-    /// 병원 선택 시 상세로 이동.
+    /// 병원 정보(ⓘ) 탭 → 상세로 이동.
     let onSelect: (SelectedHospital) -> Void
+    /// 선택한 병원들에 동시 요청 → 음성 입력으로.
+    let onRequest: ([SelectedHospital]) -> Void
     /// 현재 상태 보기 → 진행 중인 요청 상태 화면으로.
     let onShowStatus: (Int64) -> Void
 
@@ -24,6 +28,11 @@ struct HospitalSearchView: View {
             content
         }
         .background(AppColor.bgGray)
+        .safeAreaInset(edge: .bottom) {
+            if !selected.isEmpty {
+                requestBar
+            }
+        }
         .task {
             await location.resolveOnce()
             if case .idle = viewModel.loadState {
@@ -117,12 +126,15 @@ struct HospitalSearchView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(viewModel.hospitals) { hospital in
-                            Button {
-                                onSelect(selection(from: hospital))
-                            } label: {
-                                HospitalCard(hospital: hospital, viewModel: viewModel)
-                            }
-                            .buttonStyle(.plain)
+                            let item = selection(from: hospital)
+                            HospitalCard(
+                                hospital: hospital,
+                                viewModel: viewModel,
+                                isSelected: isSelected(item),
+                                onInfo: { onSelect(item) }
+                            )
+                            .contentShape(Rectangle())
+                            .onTapGesture { toggle(item) }
                         }
                     }
                     .padding(.horizontal, 20)
@@ -179,6 +191,32 @@ struct HospitalSearchView: View {
             availableBeds: viewModel.displayBeds(for: hospital)
         )
     }
+
+    // MARK: 선택 / 요청 바
+
+    private func isSelected(_ hospital: SelectedHospital) -> Bool {
+        selected.contains { $0.hospitalId == hospital.hospitalId }
+    }
+
+    private func toggle(_ hospital: SelectedHospital) {
+        if let index = selected.firstIndex(where: { $0.hospitalId == hospital.hospitalId }) {
+            selected.remove(at: index)
+        } else {
+            selected.append(hospital)
+        }
+    }
+
+    private var requestBar: some View {
+        VStack(spacing: 0) {
+            Divider().background(AppColor.border)
+            CTAButton(title: "선택한 \(selected.count)개 병원에 요청") {
+                onRequest(selected)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+        }
+        .background(AppColor.bgWhite)
+    }
 }
 
 // MARK: - 병원 카드
@@ -187,6 +225,10 @@ private struct HospitalCard: View {
     let hospital: HospitalRecommendationResponse
     /// 병상 값을 직접 관찰하기 위해 뷰모델을 참조한다(LazyVStack 갱신 누락 방지).
     let viewModel: HospitalListViewModel
+    /// 요청 대상 선택 여부.
+    let isSelected: Bool
+    /// 정보(ⓘ) 버튼 탭 → 상세 화면.
+    let onInfo: () -> Void
 
     /// 표시할 가용병상 수(상세 API 정확값 우선). 셀 body에서 직접 읽어 관찰한다.
     private var availableBeds: Int? { viewModel.displayBeds(for: hospital) }
@@ -195,13 +237,24 @@ private struct HospitalCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(isSelected ? AppColor.brandGreen : AppColor.border)
                 Text(hospital.name ?? "이름 미상")
                     .font(.heading7)
                     .foregroundStyle(AppColor.textPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 CongestionBadge(congestion: congestion)
+                Button(action: onInfo) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 18))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
 
             HStack(spacing: 6) {
@@ -235,11 +288,11 @@ private struct HospitalCard: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(AppColor.bgWhite)
+                .fill(isSelected ? AppColor.greenBg : AppColor.bgWhite)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(AppColor.border, lineWidth: 1)
+                .strokeBorder(isSelected ? AppColor.brandGreen : AppColor.border, lineWidth: isSelected ? 1.5 : 1)
         )
         .task { await viewModel.loadAccurateBeds(for: hospital.hospitalId) }
     }

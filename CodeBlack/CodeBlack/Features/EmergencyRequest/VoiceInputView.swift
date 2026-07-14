@@ -12,7 +12,7 @@ struct VoiceInputView: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(LocationProvider.self) private var location
 
-    let hospital: SelectedHospital
+    let hospitals: [SelectedHospital]
     let onBack: () -> Void
     let onSubmitted: (Int64) -> Void
 
@@ -272,7 +272,7 @@ struct VoiceInputView: View {
             if let requestId = await viewModel.submit(
                 symptomText: text,
                 paramedicLoginId: loginId,
-                target: hospital,
+                targets: hospitals,
                 coordinate: location.current,
                 voiceURL: speech.recordedFileURL
             ) {

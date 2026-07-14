@@ -30,7 +30,7 @@ final class VoiceInputViewModel {
     func submit(
         symptomText: String,
         paramedicLoginId: String,
-        target: SelectedHospital,
+        targets: [SelectedHospital],
         coordinate: CLLocationCoordinate2D,
         voiceURL: URL? = nil
     ) async -> Int64? {
@@ -39,12 +39,16 @@ final class VoiceInputViewModel {
             submitState = .failed("환자 상태 텍스트가 비어 있습니다.")
             return nil
         }
+        guard !targets.isEmpty else {
+            submitState = .failed("요청할 병원을 1개 이상 선택하세요.")
+            return nil
+        }
         submitState = .submitting
         do {
             let request = CreateEmergencyRequest(
                 paramedicLoginId: paramedicLoginId,
                 symptomText: text,
-                targetHospitals: [target.target],
+                targetHospitals: targets.map { $0.target },
                 latitude: coordinate.latitude,
                 longitude: coordinate.longitude
             )
@@ -55,7 +59,9 @@ final class VoiceInputViewModel {
             await LocalNotifier.shared.requestAuthorization()
             LocalNotifier.shared.notify(
                 title: "요청 전송 완료",
-                body: "\(target.name)에 수용 요청을 보냈습니다. 병원 확인 대기 중입니다."
+                body: targets.count == 1
+                    ? "\(targets[0].name)에 수용 요청을 보냈습니다. 병원 확인 대기 중입니다."
+                    : "\(targets.count)개 병원에 수용 요청을 보냈습니다. 병원 확인 대기 중입니다."
             )
             return response.requestId
         } catch {

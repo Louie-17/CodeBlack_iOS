@@ -23,6 +23,9 @@ struct RequestStatusView: View {
                 VStack(spacing: 28) {
                     headline
                     timelineCard
+                    if !viewModel.hospitals.isEmpty {
+                        hospitalsCard
+                    }
                     if viewModel.isAccepted {
                         acceptedCard
                     }
@@ -169,6 +172,66 @@ struct RequestStatusView: View {
         }
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 14).fill(AppColor.greenBg))
+    }
+
+    // MARK: 요청 병원 현황
+
+    private var hospitalsCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("요청 병원 현황")
+                .font(.heading7)
+                .foregroundStyle(AppColor.textPrimary)
+                .padding(.bottom, 12)
+            ForEach(Array(viewModel.hospitals.enumerated()), id: \.element.id) { index, item in
+                if index > 0 {
+                    Divider().background(AppColor.border)
+                        .padding(.vertical, 10)
+                }
+                hospitalRow(item)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
+    }
+
+    private func hospitalRow(_ item: HospitalRequestSummary) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "building.2.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(AppColor.textSecondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.hospitalName ?? "이름 미상")
+                    .font(.heading8)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(1)
+                if let beds = item.availableBeds {
+                    Text("가용병상 \(beds)")
+                        .font(.caption5)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            Spacer(minLength: 8)
+            hospitalStatusBadge(item.status)
+        }
+    }
+
+    private func hospitalStatusBadge(_ status: HospitalRequestStatus?) -> some View {
+        let (label, color): (String, Color) = {
+            switch status {
+            case .accepted: return ("수락", AppColor.brandGreenDark)
+            case .pending, .none: return ("대기 중", AppColor.textSecondary)
+            case .canceled: return ("취소", AppColor.emergencyRed)
+            case .noResponse: return ("미응답", AppColor.textSecondary)
+            case .unknown: return ("-", AppColor.textSecondary)
+            }
+        }()
+        return Text(label)
+            .font(.heading9)
+            .foregroundStyle(color)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Capsule().fill(color.opacity(0.12)))
     }
 
     // MARK: 스텝 상태

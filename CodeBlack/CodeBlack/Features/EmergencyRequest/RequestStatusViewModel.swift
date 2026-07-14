@@ -68,6 +68,8 @@ final class RequestStatusViewModel {
 
     var acceptedHospitalName: String? { status?.acceptedHospitalName }
     var isAccepted: Bool { status?.status == .accepted }
+    /// 대상 병원별 현황(수락/대기/미응답 등).
+    var hospitals: [HospitalRequestSummary] { status?.hospitals ?? [] }
 
     /// 요청 상태 폴링 시작. 수락/종료 시 자동 중단.
     func startPolling(requestId: Int64) {

@@ -16,6 +16,9 @@ struct ParamedicFlowView: View {
         NavigationStack(path: $path) {
             HospitalSearchView(
                 onSelect: { path.append(ParamedicRoute.detail($0)) },
+                onRequest: { hospitals in
+                    path.append(ParamedicRoute.voiceInput(hospitals))
+                },
                 onShowStatus: { requestId in
                     path.append(ParamedicRoute.requestStatus(requestId: requestId))
                 }
@@ -36,11 +39,11 @@ struct ParamedicFlowView: View {
             HospitalDetailView(
                 hospital: hospital,
                 onBack: { path.removeLast() },
-                onCall: { path.append(ParamedicRoute.voiceInput($0)) }
+                onCall: { path.append(ParamedicRoute.voiceInput([$0])) }
             )
-        case .voiceInput(let hospital):
+        case .voiceInput(let hospitals):
             VoiceInputView(
-                hospital: hospital,
+                hospitals: hospitals,
                 onBack: { path.removeLast() },
                 onSubmitted: { requestId in
                     // 생성된 요청을 활성 요청으로 저장하고, 스택을 초기화한 뒤 상태 화면을 depth 1로 띄운다.
