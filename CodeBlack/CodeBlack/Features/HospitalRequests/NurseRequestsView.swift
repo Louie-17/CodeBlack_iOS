@@ -24,8 +24,16 @@ struct NurseRequestsView: View {
         }
         .background(AppColor.bgGray)
         .task {
-            if let loginId = auth.loginId, case .idle = viewModel.loadState {
+            guard let loginId = auth.loginId else { return }
+            // 최초 1회는 스피너와 함께 로드, 이후 15초 주기로 갱신 + Live Activity 동기화.
+            if case .idle = viewModel.loadState {
                 await viewModel.load(loginId: loginId)
+            }
+            NurseLiveActivityManager.shared.sync(hospitalName: hospital.name ?? "", requests: viewModel.requests)
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(15))
+                await viewModel.refresh(loginId: loginId)
+                NurseLiveActivityManager.shared.sync(hospitalName: hospital.name ?? "", requests: viewModel.requests)
             }
         }
     }
@@ -42,7 +50,10 @@ struct NurseRequestsView: View {
                     .font(.caption4)
                     .foregroundStyle(AppColor.textSecondary)
                 Spacer()
-                Button(action: onLogout) {
+                Button {
+                    NurseLiveActivityManager.shared.end()
+                    onLogout()
+                } label: {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(AppColor.textSecondary)

@@ -35,6 +35,14 @@ final class HospitalRequestListViewModel {
         }
     }
 
+    /// 스피너 없이 목록만 갱신(폴링용). 실패 시 기존 데이터 유지.
+    func refresh(loginId: String) async {
+        if let result = try? await service.list(loginId: loginId) {
+            requests = result
+            if loadState != .loaded { loadState = .loaded }
+        }
+    }
+
     /// 병원 좌표 기준 환자까지 거리(km). 좌표 없으면 nil.
     static func distanceKilometers(
         from hospital: CLLocationCoordinate2D?,
