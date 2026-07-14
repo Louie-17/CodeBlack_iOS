@@ -29,11 +29,11 @@ struct NurseRequestsView: View {
             if case .idle = viewModel.loadState {
                 await viewModel.load(loginId: loginId)
             }
-            NurseLiveActivityManager.shared.sync(hospitalName: hospital.name ?? "", requests: viewModel.requests)
+            NurseLiveActivityManager.shared.sync(hospitalName: hospital.name ?? "", hospitalCoordinate: hospital.coordinate, requests: viewModel.requests)
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(15))
                 await viewModel.refresh(loginId: loginId)
-                NurseLiveActivityManager.shared.sync(hospitalName: hospital.name ?? "", requests: viewModel.requests)
+                NurseLiveActivityManager.shared.sync(hospitalName: hospital.name ?? "", hospitalCoordinate: hospital.coordinate, requests: viewModel.requests)
             }
         }
     }

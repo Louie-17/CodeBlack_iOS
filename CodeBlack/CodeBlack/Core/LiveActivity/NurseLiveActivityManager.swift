@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreLocation
 import ActivityKit
 
 @MainActor
@@ -19,7 +20,11 @@ final class NurseLiveActivityManager {
 
     /// 요청 목록에 맞춰 Live Activity를 시작/갱신/종료한다.
     /// PENDING 요청이 있으면 최신 요청으로 표시, 없으면 종료.
-    func sync(hospitalName: String, requests: [HospitalRequestResponse]) {
+    func sync(
+        hospitalName: String,
+        hospitalCoordinate: CLLocationCoordinate2D?,
+        requests: [HospitalRequestResponse]
+    ) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
         let pending = requests.filter { $0.status == .pending }
@@ -31,6 +36,9 @@ final class NurseLiveActivityManager {
         let state = PatientRequestAttributes.ContentState(
             symptomText: latest.symptomText ?? "새 환자 수용 요청",
             severity: latest.severity ?? "",
+            patientInfo: Self.patientInfo(age: latest.patientAge, sex: latest.patientSex),
+            distanceText: Self.distanceText(from: hospitalCoordinate, latitude: latest.latitude, longitude: latest.longitude),
+            elapsedText: HospitalFormat.relativeTime(iso: latest.createdAt),
             pendingCount: pending.count
         )
 
@@ -47,6 +55,26 @@ final class NurseLiveActivityManager {
                 // 위젯 익스텐션 미설정 또는 권한 거부 시 조용히 무시.
             }
         }
+    }
+
+    // MARK: - 표시 문자열
+
+    private static func patientInfo(age: Int?, sex: String?) -> String {
+        var parts: [String] = []
+        if let age { parts.append("\(age)세") }
+        switch sex?.uppercased() {
+        case "M": parts.append("남성")
+        case "F": parts.append("여성")
+        default: break
+        }
+        return parts.joined(separator: " ")
+    }
+
+    private static func distanceText(from hospital: CLLocationCoordinate2D?, latitude: Double?, longitude: Double?) -> String {
+        guard let km = HospitalRequestListViewModel.distanceKilometers(
+            from: hospital, toLatitude: latitude, longitude: longitude
+        ) else { return "" }
+        return "\(HospitalFormat.distance(km)) · \(HospitalFormat.eta(km))"
     }
 
     /// Live Activity 종료.

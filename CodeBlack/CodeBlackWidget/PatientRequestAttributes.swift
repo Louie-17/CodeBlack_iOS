@@ -15,6 +15,9 @@ struct PatientRequestAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         var symptomText: String
         var severity: String
+        var patientInfo: String
+        var distanceText: String
+        var elapsedText: String
         var pendingCount: Int
     }
 

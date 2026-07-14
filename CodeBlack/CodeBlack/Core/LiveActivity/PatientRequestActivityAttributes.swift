@@ -18,6 +18,12 @@ struct PatientRequestAttributes: ActivityAttributes {
         var symptomText: String
         /// 중증도(없으면 빈 문자열).
         var severity: String
+        /// 환자 정보(예: "54세 남성", 없으면 빈 문자열).
+        var patientInfo: String
+        /// 병원 기준 거리·도착예정(예: "4.2km · 약 6분", 없으면 빈 문자열).
+        var distanceText: String
+        /// 경과 시간(예: "4분 전").
+        var elapsedText: String
         /// 대기 중(PENDING) 요청 수.
         var pendingCount: Int
     }
