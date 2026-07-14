@@ -40,13 +40,46 @@ struct RouteMapView: View {
             }
         }
         .allowsHitTesting(interactive)
-        .task(id: routeKey) { await loadRoute() }
+        .task(id: routeKey) {
+            fitCamera()
+            await loadRoute()
+            fitCamera()
+        }
     }
 
-    /// 좌표 조합 키. 병원/환자 좌표가 채워지면 값이 바뀌어 경로를 재계산한다.
+    /// 좌표 조합 키. 병원/환자 좌표가 채워지면 값이 바뀌어 경로/카메라를 재계산한다.
     private var routeKey: String {
         guard let patient, let hospital else { return "none" }
         return "\(patient.latitude),\(patient.longitude)|\(hospital.latitude),\(hospital.longitude)"
+    }
+
+    /// 환자·병원(·경로)이 모두 보이도록 카메라를 명시적으로 맞춘다.
+    private func fitCamera() {
+        if let route {
+            let rect = route.polyline.boundingMapRect
+            let padded = rect.insetBy(dx: -rect.size.width * 0.25, dy: -rect.size.height * 0.25)
+            position = .rect(padded)
+            return
+        }
+        let coords = [patient, hospital].compactMap { $0 }
+        guard let first = coords.first else { return }
+        guard coords.count == 2 else {
+            position = .region(MKCoordinateRegion(
+                center: first,
+                span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+            ))
+            return
+        }
+        let lats = coords.map(\.latitude), lngs = coords.map(\.longitude)
+        let center = CLLocationCoordinate2D(
+            latitude: (lats.min()! + lats.max()!) / 2,
+            longitude: (lngs.min()! + lngs.max()!) / 2
+        )
+        let span = MKCoordinateSpan(
+            latitudeDelta: max(0.008, (lats.max()! - lats.min()!) * 1.5),
+            longitudeDelta: max(0.008, (lngs.max()! - lngs.min()!) * 1.5)
+        )
+        position = .region(MKCoordinateRegion(center: center, span: span))
     }
 
     /// 환자→병원 자동차 경로를 계산한다. 실패 시 직선 폴백 유지.

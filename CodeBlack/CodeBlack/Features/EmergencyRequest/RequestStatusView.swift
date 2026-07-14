@@ -60,6 +60,7 @@ struct RequestStatusView: View {
         }
         .background(AppColor.bgGray)
         .task {
+            await location.resolveOnce()
             viewModel.startPolling(requestId: requestId)
             spin = 360
         }

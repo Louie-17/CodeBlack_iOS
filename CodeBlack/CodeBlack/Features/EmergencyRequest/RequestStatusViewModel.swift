@@ -203,10 +203,10 @@ final class RequestStatusViewModel {
     private func loadHospitalCoordinate() async {
         let targetId = status?.acceptedHospitalId ?? aiCallStatus?.currentHospitalId ?? aiCall?.currentHospitalId
         guard let targetId, targetId != hospitalCoordinateId else { return }
-        hospitalCoordinateId = targetId
         if let detail = try? await hospitalService.detail(hospitalId: targetId),
            let lat = detail.latitude, let lng = detail.longitude {
             hospitalCoordinate = CLLocationCoordinate2D(latitude: lat, longitude: lng)
+            hospitalCoordinateId = targetId   // 성공 시에만 마킹(실패 시 재시도)
         }
     }
 
