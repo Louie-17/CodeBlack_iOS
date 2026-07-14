@@ -43,6 +43,8 @@ final class RequestStatusViewModel {
     private var didNotifyAccepted = false
     /// 요청 전송 시각 표기(예: "오후 3:24").
     private(set) var sentTime: String?
+    /// 미응답 마감 시 직접 연락할 후보 병원(call-candidates).
+    private(set) var callCandidates: [CallCandidateResponse] = []
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -114,8 +116,18 @@ final class RequestStatusViewModel {
                 didNotifyAccepted = true
                 LocalNotifier.shared.notifyAcceptedRequest(requestId: requestId, hospitalName: result.acceptedHospitalName)
             }
+            if isNoResponse, callCandidates.isEmpty {
+                await loadCallCandidates(requestId: requestId)
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    /// 미응답 마감 시 직접 연락 후보 병원을 조회한다.
+    private func loadCallCandidates(requestId: Int64) async {
+        if let list = try? await service.callCandidates(requestId: requestId) {
+            callCandidates = list
         }
     }
 

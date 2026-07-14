@@ -30,6 +30,9 @@ struct RequestStatusView: View {
                         acceptedCard
                     } else if viewModel.isNoResponse {
                         noResponseCard
+                        if !viewModel.callCandidates.isEmpty {
+                            callCandidatesCard
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
@@ -205,6 +208,72 @@ struct RequestStatusView: View {
         }
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 14).fill(AppColor.bgGray2))
+    }
+
+    // MARK: 직접 연락 후보 병원
+
+    private var callCandidatesCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("직접 연락 가능한 병원")
+                .font(.heading7)
+                .foregroundStyle(AppColor.textPrimary)
+            Text("자동 수용이 되지 않아, 아래 병원에 직접 연락해 주세요")
+                .font(.caption5)
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.top, 4)
+                .padding(.bottom, 12)
+            ForEach(Array(viewModel.callCandidates.enumerated()), id: \.element.id) { index, candidate in
+                if index > 0 {
+                    Divider().background(AppColor.border)
+                        .padding(.vertical, 10)
+                }
+                candidateRow(candidate)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
+    }
+
+    private func candidateRow(_ candidate: CallCandidateResponse) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "building.2.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(AppColor.textSecondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(candidate.hospitalName ?? "이름 미상")
+                    .font(.heading8)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(1)
+                if let beds = candidate.availableBeds {
+                    Text("가용병상 \(beds)")
+                        .font(.caption5)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            Spacer(minLength: 8)
+            if let url = telURL(candidate.phoneNumber) {
+                Link(destination: url) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "phone.fill")
+                            .font(.system(size: 12, weight: .bold))
+                        Text("전화")
+                            .font(.heading9)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(AppColor.brandGreen))
+                }
+            }
+        }
+    }
+
+    private func telURL(_ phone: String?) -> URL? {
+        guard let phone else { return nil }
+        let digits = phone.filter { $0.isNumber }
+        guard !digits.isEmpty else { return nil }
+        return URL(string: "tel://\(digits)")
     }
 
     // MARK: 요청 병원 현황

@@ -122,6 +122,19 @@ struct HospitalRequestSummary: Decodable, Identifiable {
     var id: Int64 { hospitalRequestId ?? -1 }
 }
 
+/// GET /api/emergency-requests/{requestId}/call-candidates 응답 항목.
+/// 자동 수용에 실패(미응답)했을 때 구급대원이 직접 연락할 후보 병원.
+struct CallCandidateResponse: Decodable, Identifiable {
+    let hospitalId: String?
+    let hospitalName: String?
+    /// 대표 전화번호(있을 때만 전화 버튼 표시).
+    let phoneNumber: String?
+    let availableBeds: Int?
+    let status: HospitalRequestStatus?
+
+    var id: String { hospitalId ?? UUID().uuidString }
+}
+
 // MARK: - 병원 담당자 관점 요청
 
 /// GET /api/hospital/requests, /{requestId}, POST /{requestId}/accept 응답.

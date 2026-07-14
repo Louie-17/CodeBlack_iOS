@@ -42,4 +42,9 @@ struct EmergencyRequestService {
     func status(requestId: Int64) async throws -> EmergencyRequestStatusResponse {
         try await client.send(.get, "/api/emergency-requests/\(requestId)/status")
     }
+
+    /// GET /api/emergency-requests/{requestId}/call-candidates — 미응답 시 직접 연락할 후보 병원.
+    func callCandidates(requestId: Int64) async throws -> [CallCandidateResponse] {
+        try await client.send(.get, "/api/emergency-requests/\(requestId)/call-candidates")
+    }
 }
