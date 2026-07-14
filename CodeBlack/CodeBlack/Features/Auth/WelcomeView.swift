@@ -17,6 +17,8 @@ struct WelcomeView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @FocusState private var focused: Bool
+    /// 아이디 입력 포커스 시 초록 헤더를 접고 흰 카드를 전체로 올린다.
+    @State private var expanded = false
 
     private var trimmed: String {
         loginId.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -25,11 +27,16 @@ struct WelcomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             greenHeader
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: expanded ? 0 : .infinity)
+                .opacity(expanded ? 0 : 1)
                 .clipped()
             loginCard
+                .frame(maxHeight: expanded ? .infinity : nil)
         }
-        .background(AppColor.brandGreen.ignoresSafeArea())
+        .background((expanded ? AppColor.bgWhite : AppColor.brandGreen).ignoresSafeArea())
+        .onChange(of: focused) { _, isFocused in
+            withAnimation(.easeInOut(duration: 0.3)) { expanded = isFocused }
+        }
     }
 
     // MARK: 초록 헤더
@@ -103,6 +110,8 @@ struct WelcomeView: View {
                     .padding(.top, 8)
             }
 
+            Spacer(minLength: 0)
+
             HStack(spacing: 4) {
                 Text("혹시 계정이 없으신가요?")
                     .font(.caption4)
@@ -129,6 +138,8 @@ struct WelcomeView: View {
         .padding(.top, 28)
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture { focused = false }
         .background(
             UnevenRoundedRectangle(
                 topLeadingRadius: 28,
