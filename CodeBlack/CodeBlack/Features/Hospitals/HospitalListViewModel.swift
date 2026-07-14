@@ -53,6 +53,7 @@ final class HospitalListViewModel {
                 sort: sort
             )
             loadState = .loaded
+            prefetchBeds(count: HospitalListViewModel.prefetchCount)
         } catch {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             loadState = .failed(message)
@@ -64,6 +65,16 @@ final class HospitalListViewModel {
         guard newSort != sort else { return }
         sort = newSort
         await load(coordinate: coordinate)
+    }
+
+    /// 첫 화면에서 미리 상세 병상을 당겨올 병원 수.
+    static let prefetchCount = 15
+
+    /// 상위 N개 병원의 정확 병상을 병렬로 미리 조회한다(서버가 느려 초기 지연 완화).
+    private func prefetchBeds(count: Int) {
+        for hospital in hospitals.prefix(count) {
+            Task { await loadAccurateBeds(for: hospital.hospitalId) }
+        }
     }
 
     /// 셀에 표시할 가용병상 수. 상세 API로 받은 정확한 값이 있으면 그걸, 없으면 추천 값을 쓴다.
