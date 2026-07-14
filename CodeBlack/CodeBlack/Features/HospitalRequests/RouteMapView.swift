@@ -17,6 +17,8 @@ struct RouteMapView: View {
 
     /// MKDirections로 계산한 실제 도로 경로(로딩 전/실패 시 nil).
     @State private var route: MKRoute?
+    /// 경로를 계산 완료한 좌표 키(중복 계산/스로틀 방지).
+    @State private var routedKey: String?
     @State private var position: MapCameraPosition = .automatic
 
     var body: some View {
@@ -43,7 +45,6 @@ struct RouteMapView: View {
         .task(id: routeKey) {
             fitCamera()
             await loadRoute()
-            fitCamera()
         }
     }
 
@@ -82,14 +83,26 @@ struct RouteMapView: View {
         position = .region(MKCoordinateRegion(center: center, span: span))
     }
 
-    /// 환자→병원 자동차 경로를 계산한다. 실패 시 직선 폴백 유지.
+    /// 환자→병원 자동차 경로를 계산한다. 스로틀/일시 오류 시 백오프 재시도. 실패 시 직선 폴백 유지.
     private func loadRoute() async {
         guard let patient, let hospital else { route = nil; return }
+        let key = routeKey
+        guard routedKey != key else { return }   // 이 좌표로 이미 계산함
         let request = MKDirections.Request()
         request.source = MKMapItem(placemark: MKPlacemark(coordinate: patient))
         request.destination = MKMapItem(placemark: MKPlacemark(coordinate: hospital))
         request.transportType = .automobile
-        route = try? await MKDirections(request: request).calculate().routes.first
+        for attempt in 0..<4 {
+            if Task.isCancelled { return }
+            if let result = try? await MKDirections(request: request).calculate().routes.first {
+                route = result
+                routedKey = key
+                fitCamera()
+                return
+            }
+            // 스로틀(MKErrorLoadingThrottled) 등 → 점증 대기 후 재시도.
+            try? await Task.sleep(nanoseconds: UInt64(attempt + 1) * 1_500_000_000)
+        }
     }
 }
 
