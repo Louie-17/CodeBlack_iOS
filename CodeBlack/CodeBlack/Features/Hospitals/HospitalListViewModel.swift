@@ -31,6 +31,8 @@ final class HospitalListViewModel {
     private(set) var accurateBeds: [String: Int] = [:]
     /// 상세 조회 중복 방지용 진행 중 집합.
     @ObservationIgnored private var inFlightBeds: Set<String> = []
+    /// 정렬별 조회 결과 캐시. 이미 조회한 정렬로 재전환 시 재조회 없이 사용(갱신은 당겨서 새로고침).
+    @ObservationIgnored private var sortCache: [HospitalSort: [HospitalRecommendationResponse]] = [:]
 
     /// 정렬 탭 표시 순서.
     static let sortTabs: [HospitalSort] = [.distance, .beds, .recommendation]
@@ -47,11 +49,13 @@ final class HospitalListViewModel {
     func load(coordinate: CLLocationCoordinate2D) async {
         loadState = .loading
         do {
-            hospitals = try await service.recommendations(
+            let result = try await service.recommendations(
                 latitude: coordinate.latitude,
                 longitude: coordinate.longitude,
                 sort: sort
             )
+            hospitals = result
+            sortCache[sort] = result
             loadState = .loaded
             prefetchBeds(count: HospitalListViewModel.prefetchCount)
         } catch {
@@ -68,17 +72,23 @@ final class HospitalListViewModel {
             sort: sort
         ) {
             hospitals = result
+            sortCache[sort] = result
             accurateBeds = [:]   // 정확 병상 캐시 초기화 → 최신값 재조회
             if loadState != .loaded { loadState = .loaded }
             prefetchBeds(count: HospitalListViewModel.prefetchCount)
         }
     }
 
-    /// 정렬 변경 후 재조회.
+    /// 정렬 변경. 이미 조회한 정렬이면 캐시값 사용(재조회 안 함), 처음이면 조회.
     func changeSort(_ newSort: HospitalSort, coordinate: CLLocationCoordinate2D) async {
         guard newSort != sort else { return }
         sort = newSort
-        await load(coordinate: coordinate)
+        if let cached = sortCache[newSort] {
+            hospitals = cached
+            loadState = .loaded
+        } else {
+            await load(coordinate: coordinate)
+        }
     }
 
     /// 첫 화면에서 미리 상세 병상을 당겨올 병원 수.
