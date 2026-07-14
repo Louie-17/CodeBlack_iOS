@@ -16,11 +16,15 @@ struct ContentView: View {
         case .idle, .loading:
             SplashView()
         case .authenticated:
-            if auth.role?.isHospitalStaff == true {
-                NurseFlowView()
-            } else {
-                ParamedicFlowView()
+            Group {
+                if auth.role?.isHospitalStaff == true {
+                    NurseFlowView()
+                } else {
+                    ParamedicFlowView()
+                }
             }
+            // TODO: 테스트용 플로팅 로그아웃 — 배포 전 제거
+            .overlay(alignment: .bottomTrailing) { DebugLogoutButton() }
         case .needsCredentials:
             AuthFlowView()
         }
@@ -43,6 +47,27 @@ private struct SplashView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppColor.bgWhite)
+    }
+}
+
+/// 테스트용 플로팅 로그아웃 버튼(우하단, 스크롤 무관). 배포 전 제거 예정.
+private struct DebugLogoutButton: View {
+    @Environment(AuthViewModel.self) private var auth
+
+    var body: some View {
+        Button {
+            auth.logout()
+        } label: {
+            Text("로그아웃")
+                .font(.caption6)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(Color.black.opacity(0.55)))
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 16)
+        .padding(.bottom, 28)
     }
 }
 
