@@ -103,8 +103,20 @@ final class SpeechRecognizer {
         let format = inputNode.outputFormat(forBus: 0)
 
         // 전송용 음성 파일 기록(선택). 실패해도 STT는 계속한다.
+        // 재생 호환을 위해 AAC(.m4a, ftyp 컨테이너)로 인코딩한다. (CAF/PCM은 브라우저 재생 불가)
         let fileURL = SpeechRecognizer.makeVoiceFileURL()
-        let recordingFile = try? AVAudioFile(forWriting: fileURL, settings: format.settings)
+        let aacSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: format.sampleRate,
+            AVNumberOfChannelsKey: format.channelCount,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+        ]
+        let recordingFile = try? AVAudioFile(
+            forWriting: fileURL,
+            settings: aacSettings,
+            commonFormat: .pcmFormatFloat32,
+            interleaved: false
+        )
         self.audioFile = recordingFile
         self.recordedFileURL = recordingFile == nil ? nil : fileURL
 
@@ -156,7 +168,7 @@ final class SpeechRecognizer {
 
     nonisolated private static func makeVoiceFileURL() -> URL {
         FileManager.default.temporaryDirectory
-            .appendingPathComponent("codeblack-voice-\(UUID().uuidString).caf")
+            .appendingPathComponent("codeblack-voice-\(UUID().uuidString).m4a")
     }
 
     // MARK: - 타이머

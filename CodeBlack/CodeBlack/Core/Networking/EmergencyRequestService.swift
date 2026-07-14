@@ -19,8 +19,8 @@ struct EmergencyRequestService {
             files.append(
                 APIClient.FilePart(
                     name: "voice",
-                    filename: "voice.caf",
-                    mimeType: "audio/x-caf",
+                    filename: "voice.m4a",
+                    mimeType: "audio/mp4",
                     data: voice
                 )
             )
