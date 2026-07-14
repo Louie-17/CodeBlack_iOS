@@ -106,13 +106,21 @@ final class RequestStatusViewModel {
             if result.status == .closed { isClosed = true }
             if result.status == .accepted, !didNotifyAccepted {
                 didNotifyAccepted = true
-                LocalNotifier.shared.notify(
-                    title: "이송 준비 완료",
-                    body: "\(result.acceptedHospitalName ?? "병원")에서 환자를 수용합니다. 이송을 준비하세요."
-                )
+                notifyAcceptedIfNeeded(requestId: requestId, hospitalName: result.acceptedHospitalName)
             }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
+    }
+
+    /// 이 요청 ID로 수락 알림을 아직 안 보냈을 때만 발송한다(화면 재진입/재생성 시 중복 방지).
+    private func notifyAcceptedIfNeeded(requestId: Int64, hospitalName: String?) {
+        let defaults = UserDefaults.standard
+        guard defaults.integer(forKey: AppConfig.notifiedAcceptedRequestKey) != Int(requestId) else { return }
+        defaults.set(Int(requestId), forKey: AppConfig.notifiedAcceptedRequestKey)
+        LocalNotifier.shared.notify(
+            title: "이송 준비 완료",
+            body: "\(hospitalName ?? "병원")에서 환자를 수용합니다. 이송을 준비하세요."
+        )
     }
 }

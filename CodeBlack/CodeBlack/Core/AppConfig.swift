@@ -32,4 +32,7 @@ enum AppConfig {
 
     /// 진행 중인 응급 요청 ID 저장 키(AppStorage/UserDefaults). 0 = 없음.
     static let activeRequestKey = "codeblack.activeEmergencyRequestId"
+
+    /// 수락(ACCEPTED) 로컬 알림을 이미 발송한 요청 ID 저장 키. 재진입 시 중복 발송 방지. 0 = 없음.
+    static let notifiedAcceptedRequestKey = "codeblack.notifiedAcceptedRequestId"
 }
