@@ -35,4 +35,7 @@ enum AppConfig {
 
     /// 수락(ACCEPTED) 로컬 알림을 이미 발송한 요청 ID 저장 키. 재진입 시 중복 발송 방지. 0 = 없음.
     static let notifiedAcceptedRequestKey = "codeblack.notifiedAcceptedRequestId"
+
+    /// AI 순차 발신을 이미 시작한 요청 ID 저장 키. 재진입 시 재발신 방지. 0 = 없음.
+    static let aiCallStartedRequestKey = "codeblack.aiCallStartedRequestId"
 }

@@ -30,6 +30,9 @@ struct RequestStatusView: View {
                         acceptedCard
                     } else if viewModel.isNoResponse {
                         noResponseCard
+                        if viewModel.aiCallStarted {
+                            aiCallCard
+                        }
                         if !viewModel.callCandidates.isEmpty {
                             callCandidatesCard
                         }
@@ -208,6 +211,67 @@ struct RequestStatusView: View {
         }
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 14).fill(AppColor.bgGray2))
+    }
+
+    // MARK: AI 순차 발신
+
+    private var aiCallCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "phone.arrow.up.right.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(AppColor.brandGreenDark)
+                Text("AI 순차 발신")
+                    .font(.heading7)
+                    .foregroundStyle(AppColor.textPrimary)
+                Spacer()
+                if let status = viewModel.aiCall?.status {
+                    Text(aiCallStatusLabel(status))
+                        .font(.heading9)
+                        .foregroundStyle(AppColor.brandGreenDark)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(AppColor.brandGreenDark.opacity(0.12)))
+                }
+            }
+            Text("수용 가능성이 높은 순으로 병원에 자동으로 전화해 AI가 환자 안내를 진행합니다.")
+                .font(.caption5)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let call = viewModel.aiCall {
+                if let name = call.currentHospitalName {
+                    aiCallInfoRow("현재 발신 병원", name)
+                }
+                if let number = call.dialedNumber {
+                    aiCallInfoRow("발신 번호", number)
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
+    }
+
+    private func aiCallInfoRow(_ title: String, _ value: String) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(.caption6)
+                .foregroundStyle(AppColor.textSecondary)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.heading8)
+                .foregroundStyle(AppColor.textPrimary)
+                .lineLimit(1)
+        }
+    }
+
+    private func aiCallStatusLabel(_ status: String) -> String {
+        switch status {
+        case "CALLING": return "발신 중"
+        case "COMPLETED": return "완료"
+        case "EXHAUSTED": return "대상 소진"
+        default: return status
+        }
     }
 
     // MARK: 직접 연락 후보 병원

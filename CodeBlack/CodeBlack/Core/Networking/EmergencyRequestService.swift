@@ -47,4 +47,9 @@ struct EmergencyRequestService {
     func callCandidates(requestId: Int64) async throws -> [CallCandidateResponse] {
         try await client.send(.get, "/api/emergency-requests/\(requestId)/call-candidates")
     }
+
+    /// POST /api/emergency-requests/{requestId}/ai-call — 무응답 병원 AI 순차 발신 시작.
+    func startAICall(requestId: Int64) async throws -> AiCallStartResponse {
+        try await client.send(.post, "/api/emergency-requests/\(requestId)/ai-call")
+    }
 }

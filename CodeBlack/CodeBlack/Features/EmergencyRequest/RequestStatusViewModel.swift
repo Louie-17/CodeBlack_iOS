@@ -45,6 +45,12 @@ final class RequestStatusViewModel {
     private(set) var sentTime: String?
     /// 미응답 마감 시 직접 연락할 후보 병원(call-candidates).
     private(set) var callCandidates: [CallCandidateResponse] = []
+    /// AI 순차 발신 시작 응답(무응답 자동 트리거).
+    private(set) var aiCall: AiCallStartResponse?
+    /// 이 요청에 AI 발신이 시작되었는지(응답 상세 없이도 표시용).
+    private(set) var aiCallStarted = false
+    /// 이번 세션에서 AI 발신을 이미 시도했는지(중복 POST 방지).
+    private var didAttemptAICall = false
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -119,6 +125,9 @@ final class RequestStatusViewModel {
             if isNoResponse, callCandidates.isEmpty {
                 await loadCallCandidates(requestId: requestId)
             }
+            if isNoResponse {
+                await startAICallIfNeeded(requestId: requestId)
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
@@ -128,6 +137,25 @@ final class RequestStatusViewModel {
     private func loadCallCandidates(requestId: Int64) async {
         if let list = try? await service.callCandidates(requestId: requestId) {
             callCandidates = list
+        }
+    }
+
+    /// 무응답 마감 시 AI 순차 발신을 자동으로 시작한다(요청당 1회, 재진입 시 재발신 방지).
+    private func startAICallIfNeeded(requestId: Int64) async {
+        guard !didAttemptAICall else { return }
+        didAttemptAICall = true
+        let defaults = UserDefaults.standard
+        // 이미 시작한 요청이면 재발신하지 않는다(재진입).
+        if defaults.integer(forKey: AppConfig.aiCallStartedRequestKey) == Int(requestId) {
+            aiCallStarted = true
+            return
+        }
+        if let response = try? await service.startAICall(requestId: requestId) {
+            defaults.set(Int(requestId), forKey: AppConfig.aiCallStartedRequestKey)
+            aiCall = response
+            aiCallStarted = true
+        } else {
+            didAttemptAICall = false   // 실패 시 다음 폴링에서 재시도
         }
     }
 

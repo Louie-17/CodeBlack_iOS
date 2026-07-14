@@ -135,6 +135,20 @@ struct CallCandidateResponse: Decodable, Identifiable {
     var id: String { hospitalId ?? UUID().uuidString }
 }
 
+/// POST /api/emergency-requests/{requestId}/ai-call 응답. AI 순차 발신 시작 현황.
+struct AiCallStartResponse: Decodable {
+    let sessionId: Int64?
+    /// 세션 상태(CALLING / COMPLETED / EXHAUSTED).
+    let status: String?
+    /// 발신 대상(순위) 병원 수.
+    let targetCount: Int?
+    /// 현재(1순위) 발신 병원 HPID/병원명.
+    let currentHospitalId: String?
+    let currentHospitalName: String?
+    /// 실제로 발신한 번호(테스트 모드면 테스트 번호).
+    let dialedNumber: String?
+}
+
 // MARK: - 병원 담당자 관점 요청
 
 /// GET /api/hospital/requests, /{requestId}, POST /{requestId}/accept 응답.
