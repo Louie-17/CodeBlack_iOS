@@ -32,6 +32,7 @@ struct WelcomeView: View {
                 .clipped()
             loginCard
                 .frame(maxHeight: expanded ? .infinity : nil)
+                .fixedSize(horizontal: false, vertical: !expanded)
         }
         .background((expanded ? AppColor.bgWhite : AppColor.brandGreen).ignoresSafeArea())
         .onChange(of: focused) { _, isFocused in
