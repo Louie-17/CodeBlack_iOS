@@ -101,7 +101,8 @@ struct NurseFlowView: View {
         NurseLiveActivityManager.shared.sync(
             hospitalName: hospital.name ?? "",
             hospitalCoordinate: hospital.coordinate,
-            requests: viewModel.requests
+            requests: viewModel.requests,
+            loginId: auth.loginId ?? ""
         )
     }
 

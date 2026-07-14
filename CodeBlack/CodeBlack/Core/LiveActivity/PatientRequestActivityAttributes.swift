@@ -26,8 +26,12 @@ struct PatientRequestAttributes: ActivityAttributes {
         var elapsedText: String
         /// 대기 중(PENDING) 요청 수.
         var pendingCount: Int
+        /// 최신 PENDING 요청의 병원요청 ID(수락 버튼용).
+        var hospitalRequestId: Int
     }
 
     /// 고정 값 — 소속 병원명.
     var hospitalName: String
+    /// 담당 간호사 로그인 ID(수락 API 호출용).
+    var loginId: String
 }

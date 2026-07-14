@@ -9,6 +9,7 @@
 import SwiftUI
 import WidgetKit
 import ActivityKit
+import AppIntents
 
 // 앱 AppColor는 위젯 타겟에 없으므로 브랜드 색을 로컬 정의.
 private let brandGreen = Color(red: 0.525, green: 0.773, blue: 0.353)   // #86C55A
@@ -47,6 +48,7 @@ struct PatientRequestLiveActivity: Widget {
                             Spacer(minLength: 0)
                         }
                         infoRow(context)
+                        acceptButton(context)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -67,39 +69,41 @@ private struct LockScreenView: View {
     let context: ActivityViewContext<PatientRequestAttributes>
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            appLogo(64)
+        VStack(spacing: 10) {
+            HStack(alignment: .top, spacing: 14) {
+                appLogo(52)
 
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Text("새 환자 수용 요청")
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                    if !context.state.severity.isEmpty {
-                        severityBadge(context.state.severity)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Text("새 환자 수용 요청")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        if !context.state.severity.isEmpty {
+                            severityBadge(context.state.severity)
+                        }
+                        Spacer(minLength: 0)
+                        Text("대기 \(context.state.pendingCount)건")
+                            .font(.subheadline).bold()
+                            .foregroundStyle(brandGreen)
                     }
-                    Spacer(minLength: 0)
-                    Text("대기 \(context.state.pendingCount)건")
-                        .font(.subheadline).bold()
-                        .foregroundStyle(brandGreen)
+
+                    infoRow(context)
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "building.2.fill").font(.system(size: 11))
+                        Text(context.attributes.hospitalName).lineLimit(1)
+                        Spacer(minLength: 0)
+                        Text(context.state.elapsedText)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.6))
                 }
-
-                infoRow(context)
-
-                Spacer(minLength: 4)
-
-                HStack(spacing: 6) {
-                    Image(systemName: "building.2.fill").font(.system(size: 12))
-                    Text(context.attributes.hospitalName).lineLimit(1)
-                    Spacer(minLength: 0)
-                    Text(context.state.elapsedText)
-                }
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.6))
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            acceptButton(context)
         }
-        .frame(maxWidth: .infinity, minHeight: 130, alignment: .top)
+        .frame(maxWidth: .infinity, minHeight: 120, alignment: .top)
     }
 }
 
@@ -127,6 +131,19 @@ private func infoRow(_ context: ActivityViewContext<PatientRequestAttributes>) -
     .font(.caption)
     .foregroundStyle(brandGreen)
     .lineLimit(1)
+}
+
+@ViewBuilder
+private func acceptButton(_ context: ActivityViewContext<PatientRequestAttributes>) -> some View {
+    Button(intent: AcceptRequestIntent(requestId: context.state.hospitalRequestId, loginId: context.attributes.loginId)) {
+        Text("수락하기")
+            .font(.subheadline.bold())
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(Capsule().fill(brandGreen))
+    }
+    .buttonStyle(.plain)
 }
 
 @ViewBuilder

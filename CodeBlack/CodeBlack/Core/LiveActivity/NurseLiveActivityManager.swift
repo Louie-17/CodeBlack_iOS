@@ -23,7 +23,8 @@ final class NurseLiveActivityManager {
     func sync(
         hospitalName: String,
         hospitalCoordinate: CLLocationCoordinate2D?,
-        requests: [HospitalRequestResponse]
+        requests: [HospitalRequestResponse],
+        loginId: String
     ) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
@@ -39,7 +40,8 @@ final class NurseLiveActivityManager {
             patientInfo: Self.patientInfo(age: latest.patientAge, sex: latest.patientSex),
             distanceText: Self.distanceText(from: hospitalCoordinate, latitude: latest.latitude, longitude: latest.longitude),
             elapsedText: HospitalFormat.relativeTime(iso: latest.createdAt),
-            pendingCount: pending.count
+            pendingCount: pending.count,
+            hospitalRequestId: Int(latest.hospitalRequestId ?? 0)
         )
 
         if let activity {
@@ -47,7 +49,7 @@ final class NurseLiveActivityManager {
         } else {
             do {
                 activity = try Activity.request(
-                    attributes: PatientRequestAttributes(hospitalName: hospitalName),
+                    attributes: PatientRequestAttributes(hospitalName: hospitalName, loginId: loginId),
                     content: ActivityContent(state: state, staleDate: nil),
                     pushType: nil
                 )

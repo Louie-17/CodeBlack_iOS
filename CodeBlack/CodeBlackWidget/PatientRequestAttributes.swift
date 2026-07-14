@@ -19,7 +19,11 @@ struct PatientRequestAttributes: ActivityAttributes {
         var distanceText: String
         var elapsedText: String
         var pendingCount: Int
+        /// 최신 PENDING 요청의 병원요청 ID(수락 버튼용).
+        var hospitalRequestId: Int
     }
 
     var hospitalName: String
+    /// 담당 간호사 로그인 ID(수락 API 호출용).
+    var loginId: String
 }
