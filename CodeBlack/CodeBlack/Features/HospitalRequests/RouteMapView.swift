@@ -15,8 +15,12 @@ struct RouteMapView: View {
     /// true면 확대/축소/이동 가능, false면 정적 프리뷰.
     var interactive: Bool = true
 
+    /// MKDirections로 계산한 실제 도로 경로(로딩 전/실패 시 nil).
+    @State private var route: MKRoute?
+    @State private var position: MapCameraPosition = .automatic
+
     var body: some View {
-        Map(initialPosition: .region(region)) {
+        Map(position: $position) {
             if let patient {
                 Marker("환자", systemImage: "cross.case.fill", coordinate: patient)
                     .tint(AppColor.emergencyRed)
@@ -25,39 +29,30 @@ struct RouteMapView: View {
                 Marker("병원", systemImage: "building.2.fill", coordinate: hospital)
                     .tint(AppColor.brandGreen)
             }
-            if let patient, let hospital {
+            if let route {
+                // 실제 도로 경로.
+                MapPolyline(route.polyline)
+                    .stroke(AppColor.brandGreen, lineWidth: 5)
+            } else if let patient, let hospital {
+                // 경로 로딩 전/실패 시 임시 직선.
                 MapPolyline(coordinates: [patient, hospital])
-                    .stroke(AppColor.brandGreen, lineWidth: 4)
+                    .stroke(AppColor.brandGreen.opacity(0.4), style: StrokeStyle(lineWidth: 3, dash: [6, 6]))
             }
         }
         .allowsHitTesting(interactive)
+        .task { await loadRoute() }
     }
 
-    private var region: MKCoordinateRegion {
-        let points = [patient, hospital].compactMap { $0 }
-        guard let first = points.first else {
-            return MKCoordinateRegion(
-                center: LocationProvider.fallback,
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-            )
+    /// 환자→병원 자동차 경로를 계산한다. 실패 시 직선 폴백 유지.
+    private func loadRoute() async {
+        guard route == nil, let patient, let hospital else { return }
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: patient))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: hospital))
+        request.transportType = .automobile
+        if let response = try? await MKDirections(request: request).calculate() {
+            route = response.routes.first
         }
-        guard points.count == 2 else {
-            return MKCoordinateRegion(
-                center: first,
-                span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
-            )
-        }
-        let lats = points.map(\.latitude)
-        let lngs = points.map(\.longitude)
-        let center = CLLocationCoordinate2D(
-            latitude: (lats.min()! + lats.max()!) / 2,
-            longitude: (lngs.min()! + lngs.max()!) / 2
-        )
-        let span = MKCoordinateSpan(
-            latitudeDelta: max(0.01, (lats.max()! - lats.min()!) * 1.6),
-            longitudeDelta: max(0.01, (lngs.max()! - lngs.min()!) * 1.6)
-        )
-        return MKCoordinateRegion(center: center, span: span)
     }
 }
 
