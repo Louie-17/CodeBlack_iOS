@@ -138,6 +138,11 @@ struct NurseRequestsView: View {
                     .padding(.top, 16)
                     .padding(.bottom, 110)   // 하단 플로팅 탭바 여백
                 }
+                .refreshable {
+                    if let loginId = auth.loginId {
+                        await viewModel.refresh(loginId: loginId)
+                    }
+                }
             }
         }
     }

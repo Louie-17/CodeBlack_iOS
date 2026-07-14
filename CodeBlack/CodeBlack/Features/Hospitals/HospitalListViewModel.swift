@@ -60,6 +60,20 @@ final class HospitalListViewModel {
         }
     }
 
+    /// 스피너로 화면을 교체하지 않고 목록만 갱신(당겨서 새로고침용). 실패 시 기존 데이터 유지.
+    func refresh(coordinate: CLLocationCoordinate2D) async {
+        if let result = try? await service.recommendations(
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude,
+            sort: sort
+        ) {
+            hospitals = result
+            accurateBeds = [:]   // 정확 병상 캐시 초기화 → 최신값 재조회
+            if loadState != .loaded { loadState = .loaded }
+            prefetchBeds(count: HospitalListViewModel.prefetchCount)
+        }
+    }
+
     /// 정렬 변경 후 재조회.
     func changeSort(_ newSort: HospitalSort, coordinate: CLLocationCoordinate2D) async {
         guard newSort != sort else { return }

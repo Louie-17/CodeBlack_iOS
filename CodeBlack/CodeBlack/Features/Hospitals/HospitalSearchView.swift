@@ -140,6 +140,7 @@ struct HospitalSearchView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 16)
                 }
+                .refreshable { await viewModel.refresh(coordinate: location.current) }
             }
         }
     }
