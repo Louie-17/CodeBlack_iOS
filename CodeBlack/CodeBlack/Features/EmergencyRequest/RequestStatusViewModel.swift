@@ -39,6 +39,8 @@ final class RequestStatusViewModel {
     private(set) var status: EmergencyRequestStatusResponse?
     private(set) var errorMessage: String?
     private(set) var isClosed = false
+    /// 수락 로컬 알림 중복 발송 방지.
+    private var didNotifyAccepted = false
     /// 요청 전송 시각 표기(예: "오후 3:24").
     private(set) var sentTime: String?
 
@@ -70,6 +72,7 @@ final class RequestStatusViewModel {
     /// 요청 상태 폴링 시작. 수락/종료 시 자동 중단.
     func startPolling(requestId: Int64) {
         stop()
+        Task { await LocalNotifier.shared.requestAuthorization() }
         Task { [weak self] in await self?.loadSentTime(requestId: requestId) }
         pollingTask = Task { [weak self] in
             guard let self else { return }
@@ -101,6 +104,13 @@ final class RequestStatusViewModel {
             status = result
             errorMessage = nil
             if result.status == .closed { isClosed = true }
+            if result.status == .accepted, !didNotifyAccepted {
+                didNotifyAccepted = true
+                LocalNotifier.shared.notify(
+                    title: "이송 준비 완료",
+                    body: "\(result.acceptedHospitalName ?? "병원")에서 환자를 수용합니다. 이송을 준비하세요."
+                )
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

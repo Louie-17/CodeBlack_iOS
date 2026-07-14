@@ -51,6 +51,12 @@ final class VoiceInputViewModel {
             let voiceData = voiceURL.flatMap { try? Data(contentsOf: $0) }
             let response = try await service.create(request, voice: voiceData)
             submitState = .idle
+            // 요청 전송 완료 로컬 알림(대기 중 안내).
+            await LocalNotifier.shared.requestAuthorization()
+            LocalNotifier.shared.notify(
+                title: "요청 전송 완료",
+                body: "\(target.name)에 수용 요청을 보냈습니다. 병원 확인 대기 중입니다."
+            )
             return response.requestId
         } catch {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
