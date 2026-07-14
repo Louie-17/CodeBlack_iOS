@@ -99,7 +99,7 @@ struct NurseFlowView: View {
             if request.status == .pending {
                 LocalNotifier.shared.notify(
                     title: "새 환자 수용 요청",
-                    body: "응급 환자가 발생했습니다. 수용 가능한 응급실로 요청이 전송되었습니다."
+                    body: "응급 환자가 발생했습니다. 수용 가능한 응급실로 판단되어 요청합니다."
                 )
             }
         }
