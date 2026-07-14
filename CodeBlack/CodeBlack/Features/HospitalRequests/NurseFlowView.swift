@@ -25,9 +25,9 @@ struct NurseFlowView: View {
                 Group {
                     switch tab {
                     case .received:
-                        NurseRequestsView(kind: .received, viewModel: viewModel, onSelect: openDetail, onLogout: logout, unreadCount: notifications.unreadCount, onBell: { showNotifications = true })
+                        NurseRequestsView(kind: .received, viewModel: viewModel, onSelect: openDetail, unreadCount: notifications.unreadCount, onBell: { showNotifications = true })
                     case .completed:
-                        NurseRequestsView(kind: .completed, viewModel: viewModel, onSelect: openDetail, onLogout: logout, unreadCount: notifications.unreadCount, onBell: { showNotifications = true })
+                        NurseRequestsView(kind: .completed, viewModel: viewModel, onSelect: openDetail, unreadCount: notifications.unreadCount, onBell: { showNotifications = true })
                     }
                 }
                 NurseGlassTabBar(selected: $tab)
@@ -65,10 +65,7 @@ struct NurseFlowView: View {
         }
     }
 
-    private func logout() {
-        NurseLiveActivityManager.shared.end()
-        auth.logout()
-    }
+    // 헤더 로그아웃 버튼은 제거됨(테스트용 플로팅 로그아웃 사용).
 
     /// 소속 병원 정보 로드 후, 요청/알림 폴링 + Live Activity/로컬 알림 동기화.
     private func bootstrap() async {

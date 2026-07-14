@@ -30,7 +30,7 @@ struct NurseGlassTabBar: View {
                 Text(title)
                     .font(.heading9)
             }
-            .foregroundStyle(active ? AppColor.brandGreen : AppColor.textSecondary)
+            .foregroundStyle(active ? AppColor.brandGreenDark : AppColor.textSecondary)
             .padding(.horizontal, 24)
             .padding(.vertical, 8)
             .contentShape(Rectangle())

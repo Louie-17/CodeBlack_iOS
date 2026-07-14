@@ -56,6 +56,7 @@ private struct DebugLogoutButton: View {
 
     var body: some View {
         Button {
+            NurseLiveActivityManager.shared.end()
             auth.logout()
         } label: {
             Text("로그아웃")

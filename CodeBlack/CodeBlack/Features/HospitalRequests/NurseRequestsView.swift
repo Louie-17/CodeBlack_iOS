@@ -17,7 +17,6 @@ struct NurseRequestsView: View {
     @Environment(NurseHospitalInfo.self) private var hospital
 
     let onSelect: (NurseRequestItem) -> Void
-    let onLogout: () -> Void
     /// 안 읽은 알림 수(헤더 배지).
     let unreadCount: Int
     /// 알림 버튼 탭 → 알림 시트 열기.
@@ -53,45 +52,42 @@ struct NurseRequestsView: View {
                     .font(.caption4)
                     .foregroundStyle(AppColor.textSecondary)
                 Spacer()
-                Button(action: onBell) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "bell.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(AppColor.textSecondary)
-                            .frame(width: 26, height: 26)
-                        if unreadCount > 0 {
-                            Text(unreadCount > 99 ? "99+" : "\(unreadCount)")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Capsule().fill(AppColor.emergencyRed))
-                                .offset(x: 4, y: -4)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                Button {
-                    NurseLiveActivityManager.shared.end()
-                    onLogout()
-                } label: {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                .buttonStyle(.plain)
             }
-            HStack(alignment: .center) {
+            HStack(alignment: .center, spacing: 8) {
                 Text(title)
                     .font(.heading3)
                     .foregroundStyle(AppColor.textPrimary)
                 Spacer()
                 bedBadge
+                bellBadge
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
         .background(AppColor.bgWhite)
+    }
+
+    private var bellBadge: some View {
+        Button(action: onBell) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(AppColor.brandGreenDark)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(AppColor.greenBg2))
+                if unreadCount > 0 {
+                    Text(unreadCount > 99 ? "99+" : "\(unreadCount)")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(AppColor.emergencyRed))
+                        .offset(x: 5, y: -5)
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     private var bedBadge: some View {
