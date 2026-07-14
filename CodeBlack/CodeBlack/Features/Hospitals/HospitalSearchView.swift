@@ -120,12 +120,9 @@ struct HospitalSearchView: View {
                             Button {
                                 onSelect(selection(from: hospital))
                             } label: {
-                                HospitalCard(hospital: hospital, availableBeds: viewModel.displayBeds(for: hospital))
+                                HospitalCard(hospital: hospital, viewModel: viewModel)
                             }
                             .buttonStyle(.plain)
-                            .onAppear {
-                                Task { await viewModel.loadAccurateBeds(for: hospital.hospitalId) }
-                            }
                         }
                     }
                     .padding(.horizontal, 20)
@@ -188,8 +185,11 @@ struct HospitalSearchView: View {
 
 private struct HospitalCard: View {
     let hospital: HospitalRecommendationResponse
-    /// 표시할 가용병상 수(상세 API 정확값 우선).
-    let availableBeds: Int?
+    /// 병상 값을 직접 관찰하기 위해 뷰모델을 참조한다(LazyVStack 갱신 누락 방지).
+    let viewModel: HospitalListViewModel
+
+    /// 표시할 가용병상 수(상세 API 정확값 우선). 셀 body에서 직접 읽어 관찰한다.
+    private var availableBeds: Int? { viewModel.displayBeds(for: hospital) }
 
     private var congestion: Congestion { Congestion(availableBeds: availableBeds) }
 
@@ -241,5 +241,6 @@ private struct HospitalCard: View {
             RoundedRectangle(cornerRadius: 16)
                 .strokeBorder(AppColor.border, lineWidth: 1)
         )
+        .task { await viewModel.loadAccurateBeds(for: hospital.hospitalId) }
     }
 }
