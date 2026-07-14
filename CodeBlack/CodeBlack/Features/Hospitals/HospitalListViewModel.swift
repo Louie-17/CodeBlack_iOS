@@ -43,13 +43,16 @@ final class HospitalListViewModel {
         }
     }
 
-    /// 현재 좌표 기준 추천 병원 조회.
-    func load(coordinate: CLLocationCoordinate2D) async {
+    /// 현재 좌표 + 지역(시도/시군구) 기준 추천 병원 조회.
+    /// 지역은 서버 실시간 병상 조회에 필요하다(없으면 500이 날 수 있음).
+    func load(coordinate: CLLocationCoordinate2D, city: String? = nil, district: String? = nil) async {
         loadState = .loading
         do {
             hospitals = try await service.recommendations(
                 latitude: coordinate.latitude,
                 longitude: coordinate.longitude,
+                city: city,
+                district: district,
                 sort: sort
             )
             loadState = .loaded
@@ -61,10 +64,15 @@ final class HospitalListViewModel {
     }
 
     /// 정렬 변경 후 재조회.
-    func changeSort(_ newSort: HospitalSort, coordinate: CLLocationCoordinate2D) async {
+    func changeSort(
+        _ newSort: HospitalSort,
+        coordinate: CLLocationCoordinate2D,
+        city: String? = nil,
+        district: String? = nil
+    ) async {
         guard newSort != sort else { return }
         sort = newSort
-        await load(coordinate: coordinate)
+        await load(coordinate: coordinate, city: city, district: district)
     }
 
     /// 첫 화면에서 미리 상세 병상을 당겨올 병원 수.

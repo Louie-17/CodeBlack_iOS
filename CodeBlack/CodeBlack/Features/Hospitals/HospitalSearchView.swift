@@ -26,7 +26,7 @@ struct HospitalSearchView: View {
         .task {
             await location.resolveOnce()
             if case .idle = viewModel.loadState {
-                await viewModel.load(coordinate: location.current)
+                await viewModel.load(coordinate: location.current, city: location.city, district: location.district)
             }
         }
     }
@@ -74,7 +74,7 @@ struct HospitalSearchView: View {
             ForEach(HospitalListViewModel.sortTabs, id: \.self) { tab in
                 let selected = viewModel.sort == tab
                 Button {
-                    Task { await viewModel.changeSort(tab, coordinate: location.current) }
+                    Task { await viewModel.changeSort(tab, coordinate: location.current, city: location.city, district: location.district) }
                 } label: {
                     Text(HospitalListViewModel.tabTitle(tab))
                         .font(.heading8)
@@ -144,7 +144,7 @@ struct HospitalSearchView: View {
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
             Button("다시 시도") {
-                Task { await viewModel.load(coordinate: location.current) }
+                Task { await viewModel.load(coordinate: location.current, city: location.city, district: location.district) }
             }
             .font(.heading8)
             .foregroundStyle(AppColor.brandGreenDark)
