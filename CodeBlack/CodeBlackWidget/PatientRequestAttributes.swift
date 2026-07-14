@@ -21,6 +21,8 @@ struct PatientRequestAttributes: ActivityAttributes {
         var pendingCount: Int
         /// 최신 PENDING 요청의 병원요청 ID(수락 버튼용).
         var hospitalRequestId: Int
+        /// 수락 완료 표시(버튼 탭 즉시 피드백).
+        var accepted: Bool = false
     }
 
     var hospitalName: String

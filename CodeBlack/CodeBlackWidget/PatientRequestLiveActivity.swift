@@ -39,18 +39,27 @@ struct PatientRequestLiveActivity: Widget {
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            Text("새 환자 수용 요청").font(.headline)
-                            if !context.state.severity.isEmpty {
-                                severityBadge(context.state.severity)
-                            }
+                    if context.state.accepted {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(brandGreen)
+                            Text("수락되었습니다!").font(.headline)
                             Spacer(minLength: 0)
                         }
-                        infoRow(context)
-                        acceptButton(context)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 6) {
+                                Text("새 환자 수용 요청").font(.headline)
+                                if !context.state.severity.isEmpty {
+                                    severityBadge(context.state.severity)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            infoRow(context)
+                            acceptButton(context)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } compactLeading: {
                 appLogo(20)
@@ -69,6 +78,36 @@ private struct LockScreenView: View {
     let context: ActivityViewContext<PatientRequestAttributes>
 
     var body: some View {
+        if context.state.accepted {
+            acceptedView
+        } else {
+            requestView
+        }
+    }
+
+    private var acceptedView: some View {
+        HStack(spacing: 14) {
+            appLogo(52)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(brandGreen)
+                    Text("수락되었습니다!")
+                        .font(.title3.bold())
+                        .foregroundStyle(.white)
+                }
+                Text("\(context.attributes.hospitalName) 수용 확정")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
+    }
+
+    private var requestView: some View {
         VStack(spacing: 10) {
             HStack(alignment: .top, spacing: 14) {
                 appLogo(52)

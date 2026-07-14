@@ -28,7 +28,17 @@ final class NurseLiveActivityManager {
     ) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
-        let pending = requests.filter { $0.status == .pending }
+        // LA '수락하기'로 방금 수락한 요청은 목록에 반영되기 전까지 제외(재표시/깜빡임 방지).
+        let acceptedKey = "codeblack.laAcceptedRequestId"
+        let acceptedId = UserDefaults.standard.integer(forKey: acceptedKey)
+        var pending = requests.filter { $0.status == .pending }
+        if acceptedId != 0 {
+            pending.removeAll { Int($0.hospitalRequestId ?? 0) == acceptedId }
+            // 더 이상 대기중이 아니면 플래그 정리.
+            if !requests.contains(where: { Int($0.hospitalRequestId ?? 0) == acceptedId && $0.status == .pending }) {
+                UserDefaults.standard.removeObject(forKey: acceptedKey)
+            }
+        }
         guard let latest = pending.max(by: { ($0.createdAt ?? "") < ($1.createdAt ?? "") }) else {
             end()
             return
@@ -44,9 +54,11 @@ final class NurseLiveActivityManager {
             hospitalRequestId: Int(latest.hospitalRequestId ?? 0)
         )
 
-        if let activity {
+        if let activity, activity.activityState == .active {
             Task { await activity.update(ActivityContent(state: state, staleDate: nil)) }
         } else {
+            // 없거나 (인텐트로) 외부 종료됨 → 새로 시작.
+            self.activity = nil
             do {
                 activity = try Activity.request(
                     attributes: PatientRequestAttributes(hospitalName: hospitalName, loginId: loginId),
