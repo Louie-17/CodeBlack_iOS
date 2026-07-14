@@ -42,6 +42,7 @@ struct RequestStatusView: View {
                         }
                     } else if viewModel.isAccepted {
                         acceptedCard
+                        routeMap
                         timelineCard
                         if !viewModel.hospitals.isEmpty {
                             hospitalsCard

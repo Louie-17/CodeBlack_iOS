@@ -136,6 +136,9 @@ final class RequestStatusViewModel {
                 didNotifyAccepted = true
                 LocalNotifier.shared.notifyAcceptedRequest(requestId: requestId, hospitalName: result.acceptedHospitalName)
             }
+            if isAccepted {
+                await loadHospitalCoordinate()
+            }
             if isNoResponse, callCandidates.isEmpty {
                 await loadCallCandidates(requestId: requestId)
             }
@@ -196,9 +199,9 @@ final class RequestStatusViewModel {
         }
     }
 
-    /// AI 전화가 연결된(현재) 병원의 좌표를 조회한다(지도 표시용).
+    /// 수락/AI 연결된 병원의 좌표를 조회한다(지도 표시용). 수락 병원 우선.
     private func loadHospitalCoordinate() async {
-        let targetId = aiCallStatus?.currentHospitalId ?? aiCall?.currentHospitalId
+        let targetId = status?.acceptedHospitalId ?? aiCallStatus?.currentHospitalId ?? aiCall?.currentHospitalId
         guard let targetId, targetId != hospitalCoordinateId else { return }
         hospitalCoordinateId = targetId
         if let detail = try? await hospitalService.detail(hospitalId: targetId),
