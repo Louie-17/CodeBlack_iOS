@@ -27,6 +27,11 @@ final class HospitalListViewModel {
 
     private let service = HospitalService()
 
+    /// 병원별 상세 API 정확 가용병상 캐시(hospitalId → beds).
+    private(set) var accurateBeds: [String: Int] = [:]
+    /// 상세 조회 중복 방지용 진행 중 집합.
+    @ObservationIgnored private var inFlightBeds: Set<String> = []
+
     /// 정렬 탭 표시 순서.
     static let sortTabs: [HospitalSort] = [.distance, .beds, .recommendation]
 
@@ -59,5 +64,21 @@ final class HospitalListViewModel {
         guard newSort != sort else { return }
         sort = newSort
         await load(coordinate: coordinate)
+    }
+
+    /// 셀에 표시할 가용병상 수. 상세 API로 받은 정확한 값이 있으면 그걸, 없으면 추천 값을 쓴다.
+    func displayBeds(for hospital: HospitalRecommendationResponse) -> Int? {
+        guard let id = hospital.hospitalId else { return hospital.availableBeds }
+        return accurateBeds[id] ?? hospital.availableBeds
+    }
+
+    /// 병원 상세를 조회해 정확한 가용병상 수를 캐시한다. (셀 표시 시 1회)
+    func loadAccurateBeds(for hospitalId: String?) async {
+        guard let hospitalId, accurateBeds[hospitalId] == nil, !inFlightBeds.contains(hospitalId) else { return }
+        inFlightBeds.insert(hospitalId)
+        defer { inFlightBeds.remove(hospitalId) }
+        if let detail = try? await service.detail(hospitalId: hospitalId), let beds = detail.availableBeds {
+            accurateBeds[hospitalId] = beds
+        }
     }
 }

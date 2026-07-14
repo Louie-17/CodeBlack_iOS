@@ -115,9 +115,12 @@ struct HospitalSearchView: View {
                             Button {
                                 onSelect(selection(from: hospital))
                             } label: {
-                                HospitalCard(hospital: hospital)
+                                HospitalCard(hospital: hospital, availableBeds: viewModel.displayBeds(for: hospital))
                             }
                             .buttonStyle(.plain)
+                            .onAppear {
+                                Task { await viewModel.loadAccurateBeds(for: hospital.hospitalId) }
+                            }
                         }
                     }
                     .padding(.horizontal, 20)
@@ -171,7 +174,7 @@ struct HospitalSearchView: View {
             latitude: hospital.latitude,
             longitude: hospital.longitude,
             distanceKilometers: hospital.distanceKilometers,
-            availableBeds: hospital.availableBeds
+            availableBeds: viewModel.displayBeds(for: hospital)
         )
     }
 }
@@ -180,8 +183,10 @@ struct HospitalSearchView: View {
 
 private struct HospitalCard: View {
     let hospital: HospitalRecommendationResponse
+    /// 표시할 가용병상 수(상세 API 정확값 우선).
+    let availableBeds: Int?
 
-    private var congestion: Congestion { Congestion(availableBeds: hospital.availableBeds) }
+    private var congestion: Congestion { Congestion(availableBeds: availableBeds) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -208,7 +213,7 @@ private struct HospitalCard: View {
                     .foregroundStyle(AppColor.textSecondary)
             }
 
-            BedGauge(availableBeds: hospital.availableBeds)
+            BedGauge(availableBeds: availableBeds)
 
             if hospital.recommendationScore != nil || !(hospital.equipmentTypes ?? []).isEmpty {
                 HStack(spacing: 6) {

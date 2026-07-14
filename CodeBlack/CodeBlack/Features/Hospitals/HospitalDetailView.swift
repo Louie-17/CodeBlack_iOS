@@ -15,9 +15,10 @@ struct HospitalDetailView: View {
 
     @State private var viewModel = HospitalDetailViewModel()
 
-    /// 표시할 가용병상 수. 목록에서 본 값(추천 응답)을 우선해 상세와 값이 어긋나지 않게 한다.
+    /// 표시할 가용병상 수. 상세 API 값(정확한 별도 소스)을 우선한다.
+    /// 로딩 전에는 목록에서 넘어온 값(이미 상세값으로 맞춰짐)을 임시 표시한다.
     private var availableBeds: Int? {
-        hospital.availableBeds ?? viewModel.detail?.availableBeds
+        viewModel.detail?.availableBeds ?? hospital.availableBeds
     }
 
     private var congestion: Congestion {
