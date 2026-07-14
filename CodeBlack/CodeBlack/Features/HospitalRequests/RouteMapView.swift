@@ -40,19 +40,23 @@ struct RouteMapView: View {
             }
         }
         .allowsHitTesting(interactive)
-        .task { await loadRoute() }
+        .task(id: routeKey) { await loadRoute() }
+    }
+
+    /// 좌표 조합 키. 병원/환자 좌표가 채워지면 값이 바뀌어 경로를 재계산한다.
+    private var routeKey: String {
+        guard let patient, let hospital else { return "none" }
+        return "\(patient.latitude),\(patient.longitude)|\(hospital.latitude),\(hospital.longitude)"
     }
 
     /// 환자→병원 자동차 경로를 계산한다. 실패 시 직선 폴백 유지.
     private func loadRoute() async {
-        guard route == nil, let patient, let hospital else { return }
+        guard let patient, let hospital else { route = nil; return }
         let request = MKDirections.Request()
         request.source = MKMapItem(placemark: MKPlacemark(coordinate: patient))
         request.destination = MKMapItem(placemark: MKPlacemark(coordinate: hospital))
         request.transportType = .automobile
-        if let response = try? await MKDirections(request: request).calculate() {
-            route = response.routes.first
-        }
+        route = try? await MKDirections(request: request).calculate().routes.first
     }
 }
 
