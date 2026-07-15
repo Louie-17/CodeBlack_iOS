@@ -33,7 +33,7 @@ final class HospitalListViewModel {
     @ObservationIgnored private var inFlightBeds: Set<String> = []
 
     /// 정렬 탭 표시 순서.
-    static let sortTabs: [HospitalSort] = [.distance, .beds, .recommendation]
+    static let sortTabs: [HospitalSort] = [.distance, .recommendation]
 
     static func tabTitle(_ sort: HospitalSort) -> String {
         switch sort {
