@@ -120,12 +120,12 @@ struct HospitalSearchView: View {
         case .failed(let message):
             errorState(message)
         case .loaded:
-            if viewModel.hospitals.isEmpty {
+            if viewModel.visibleHospitals.isEmpty {
                 emptyState
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(viewModel.hospitals) { hospital in
+                        ForEach(viewModel.visibleHospitals) { hospital in
                             let item = selection(from: hospital)
                             HospitalCard(
                                 hospital: hospital,

@@ -97,6 +97,12 @@ final class HospitalListViewModel {
         return accurateBeds[id] ?? hospital.availableBeds
     }
 
+    /// 목록에 표시할 병원. AI 추천 정렬에서는 가용병상 0개 병원을 제외한다(병상 미상 nil은 표시).
+    var visibleHospitals: [HospitalRecommendationResponse] {
+        guard sort == .recommendation else { return hospitals }
+        return hospitals.filter { displayBeds(for: $0) != 0 }
+    }
+
     /// 병원 상세를 조회해 정확한 가용병상 수를 캐시한다. (셀 표시 시 1회)
     func loadAccurateBeds(for hospitalId: String?) async {
         guard let hospitalId, accurateBeds[hospitalId] == nil, !inFlightBeds.contains(hospitalId) else { return }
