@@ -25,6 +25,12 @@ struct ContentView: View {
             }
             // TODO: 테스트용 플로팅 로그아웃 — 배포 전 제거
             .overlay(alignment: .bottomTrailing) { DebugLogoutButton() }
+            // 대원이면 인증 직후 AI 추천을 미리 로드(느린 API 체감 제거).
+            .task {
+                if auth.role?.isHospitalStaff != true {
+                    await HospitalListViewModel.shared.prefetch(using: .shared)
+                }
+            }
         case .needsCredentials:
             AuthFlowView()
         }

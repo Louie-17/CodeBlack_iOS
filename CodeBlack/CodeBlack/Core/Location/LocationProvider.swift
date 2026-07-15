@@ -15,6 +15,9 @@ import Observation
 @Observable
 final class LocationProvider {
 
+    /// 앱 전역 공유 인스턴스(프리페치와 화면이 동일 좌표를 공유).
+    static let shared = LocationProvider()
+
     private(set) var coordinate: CLLocationCoordinate2D?
     private(set) var isResolving = false
     /// 역지오코딩된 현재 위치 지명(예: "서울특별시 종로구"). 미확정이면 nil.

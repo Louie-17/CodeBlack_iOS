@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ParamedicFlowView: View {
     @State private var path = NavigationPath()
-    @State private var location = LocationProvider()
+    @State private var location = LocationProvider.shared
     @AppStorage(AppConfig.activeRequestKey) private var activeRequestId: Int = 0
 
     var body: some View {

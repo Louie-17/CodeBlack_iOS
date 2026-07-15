@@ -22,6 +22,9 @@ final class HospitalListViewModel {
     }
 
     private(set) var loadState: LoadState = .idle
+
+    /// 앱 전역 공유 인스턴스. 앱 시작 시 프리페치해두고 화면에서 재사용한다(API 지연 체감 제거).
+    static let shared = HospitalListViewModel()
     private(set) var hospitals: [HospitalRecommendationResponse] = []
     var sort: HospitalSort = .distance   // 기본 정렬: 거리순
 
@@ -46,6 +49,20 @@ final class HospitalListViewModel {
     /// 현재 좌표 기준 추천 병원 조회.
     func load(coordinate: CLLocationCoordinate2D) async {
         loadState = .loading
+        await fetch(coordinate: coordinate)
+    }
+
+    /// 위치 확보 후 추천을 1회만 미리 로드(앱/플로우 시작 프리페치).
+    /// 이미 로드/로딩/실패 상태면 건너뛴다. await 이전에 상태를 선점해 중복 호출 레이스를 막는다.
+    func prefetch(using location: LocationProvider) async {
+        guard case .idle = loadState else { return }
+        loadState = .loading
+        await location.resolveOnce()
+        await fetch(coordinate: location.current)
+    }
+
+    /// 추천 조회 본체(load/prefetch 공용). 상태 선점은 호출부에서 처리한다.
+    private func fetch(coordinate: CLLocationCoordinate2D) async {
         do {
             hospitals = try await service.recommendations(
                 latitude: coordinate.latitude,

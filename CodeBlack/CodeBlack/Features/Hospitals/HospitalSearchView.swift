@@ -10,7 +10,7 @@ import SwiftUI
 struct HospitalSearchView: View {
     @Environment(LocationProvider.self) private var location
     @AppStorage(AppConfig.activeRequestKey) private var activeRequestId: Int = 0
-    @State private var viewModel = HospitalListViewModel()
+    @State private var viewModel = HospitalListViewModel.shared
     /// 요청 대상으로 선택한 병원들(순서 유지, 첫 항목이 우선 병원).
     @State private var selected: [SelectedHospital] = []
 
@@ -34,10 +34,7 @@ struct HospitalSearchView: View {
             }
         }
         .task {
-            await location.resolveOnce()
-            if case .idle = viewModel.loadState {
-                await viewModel.load(coordinate: location.current)
-            }
+            await viewModel.prefetch(using: location)
         }
     }
 
