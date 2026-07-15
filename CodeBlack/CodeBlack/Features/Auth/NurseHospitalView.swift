@@ -10,7 +10,6 @@ import SwiftUI
 
 struct NurseHospitalView: View {
     let loginId: String
-    let phoneNumber: String
     let onBack: () -> Void
 
     @Environment(AuthViewModel.self) private var auth
@@ -187,8 +186,7 @@ struct NurseHospitalView: View {
                     loginId: loginId,
                     role: .nurse,
                     hospitalId: hospitalId,
-                    hospitalName: hospital.name,
-                    phoneNumber: phoneNumber
+                    hospitalName: hospital.name
                 )
                 // 성공 시 auth.state = .authenticated → 루트가 앱 플로우로 전환.
             } catch {
@@ -200,6 +198,6 @@ struct NurseHospitalView: View {
 }
 
 #Preview {
-    NurseHospitalView(loginId: "nurse1", phoneNumber: "010-1234-5678", onBack: {})
+    NurseHospitalView(loginId: "nurse1", onBack: {})
         .environment(AuthViewModel())
 }

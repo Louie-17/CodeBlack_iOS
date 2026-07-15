@@ -30,25 +30,20 @@ struct AuthFlowView: View {
         case .signupId:
             SignupIdView(
                 onBack: { path.removeLast() },
-                onNext: { loginId in path.append(AuthRoute.phoneInput(loginId: loginId)) }
+                onNext: { loginId in path.append(AuthRoute.roleSelect(loginId: loginId)) }
             )
-        case .phoneInput(let loginId):
-            PhoneInputView(
-                loginId: loginId,
-                onBack: { path.removeLast() },
-                onNext: { phoneNumber in
-                    path.append(AuthRoute.roleSelect(loginId: loginId, phoneNumber: phoneNumber))
-                }
-            )
-        case .roleSelect(let loginId, let phoneNumber):
+        case .roleSelect(let loginId):
             RoleSelectView(
                 loginId: loginId,
-                phoneNumber: phoneNumber,
                 onBack: { path.removeLast() },
-                onNurseNext: { id in path.append(AuthRoute.nurseHospital(loginId: id, phoneNumber: phoneNumber)) }
+                onParamedicNext: { id in path.append(AuthRoute.phoneInput(loginId: id)) },
+                onNurseNext: { id in path.append(AuthRoute.nurseHospital(loginId: id)) }
             )
-        case .nurseHospital(let loginId, let phoneNumber):
-            NurseHospitalView(loginId: loginId, phoneNumber: phoneNumber, onBack: { path.removeLast() })
+        case .phoneInput(let loginId):
+            // 구급대원 전용 마지막 단계 — 전화번호 입력 후 가입 완료.
+            PhoneInputView(loginId: loginId, onBack: { path.removeLast() })
+        case .nurseHospital(let loginId):
+            NurseHospitalView(loginId: loginId, onBack: { path.removeLast() })
         }
     }
 }
@@ -56,7 +51,7 @@ struct AuthFlowView: View {
 /// 온보딩 라우트.
 enum AuthRoute: Hashable {
     case signupId
+    case roleSelect(loginId: String)
     case phoneInput(loginId: String)
-    case roleSelect(loginId: String, phoneNumber: String)
-    case nurseHospital(loginId: String, phoneNumber: String)
+    case nurseHospital(loginId: String)
 }

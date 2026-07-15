@@ -2,8 +2,8 @@
 //  PhoneInputView.swift
 //  CodeBlack
 //
-//  회원가입 단계 — 전화번호 입력. 010 - 국번 - 뒷번호 3칸으로 나눠 입력받는다.
-//  입력 완료 시 "010-1234-5678" 형식으로 합쳐 다음 단계(사용자 유형 선택)로 전달한다.
+//  구급대원 회원가입 마지막 단계 — 전화번호 입력.
+//  010 - 국번 - 뒷번호 3칸으로 나눠 입력받아 "010-1234-5678" 형식으로 가입 요청한다.
 //
 
 import SwiftUI
@@ -11,14 +11,15 @@ import SwiftUI
 struct PhoneInputView: View {
     let loginId: String
     let onBack: () -> Void
-    /// 완성된 전화번호("010-1234-5678")를 다음 단계로 전달.
-    let onNext: (String) -> Void
 
     private enum Field { case first, second, third }
 
+    @Environment(AuthViewModel.self) private var auth
     @State private var part1 = "010"
     @State private var part2 = ""
     @State private var part3 = ""
+    @State private var isSubmitting = false
+    @State private var errorMessage: String?
     @FocusState private var focus: Field?
 
     private var phoneNumber: String { "\(part1)-\(part2)-\(part3)" }
@@ -47,9 +48,21 @@ struct PhoneInputView: View {
 
             Spacer()
 
-            CTAButton(title: "다음", isEnabled: isValid, action: next)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.caption5)
+                    .foregroundStyle(AppColor.emergencyRed)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+            }
+
+            CTAButton(
+                title: isSubmitting ? "가입 중…" : "다음",
+                isEnabled: isValid && !isSubmitting,
+                action: submit
+            )
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
         }
         .background(AppColor.bgWhite)
         .onAppear { focus = .second }
@@ -91,13 +104,24 @@ struct PhoneInputView: View {
         }
     }
 
-    private func next() {
-        guard isValid else { return }
+    private func submit() {
+        guard isValid, !isSubmitting else { return }
         focus = nil
-        onNext(phoneNumber)
+        isSubmitting = true
+        errorMessage = nil
+        Task {
+            do {
+                try await auth.register(loginId: loginId, role: .paramedic, phoneNumber: phoneNumber)
+                // 성공 시 auth.state = .authenticated → 루트가 앱 플로우로 전환.
+            } catch {
+                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                isSubmitting = false
+            }
+        }
     }
 }
 
 #Preview {
-    PhoneInputView(loginId: "nurse1", onBack: {}, onNext: { _ in })
+    PhoneInputView(loginId: "paramedic1", onBack: {})
+        .environment(AuthViewModel())
 }

@@ -10,15 +10,13 @@ import SwiftUI
 
 struct RoleSelectView: View {
     let loginId: String
-    let phoneNumber: String
     let onBack: () -> Void
-    /// 간호사 선택 시 근무 병원 선택 화면으로. (구급대원은 즉시 가입)
+    /// 구급대원 선택 시 전화번호 입력 화면으로.
+    let onParamedicNext: (String) -> Void
+    /// 간호사 선택 시 근무 병원 선택 화면으로.
     let onNurseNext: (String) -> Void
 
-    @Environment(AuthViewModel.self) private var auth
     @State private var selected: ActorRole?
-    @State private var isSubmitting = false
-    @State private var errorMessage: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -49,17 +47,9 @@ struct RoleSelectView: View {
 
             Spacer()
 
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.caption5)
-                    .foregroundStyle(AppColor.emergencyRed)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 8)
-            }
-
             CTAButton(
-                title: isSubmitting ? "가입 중…" : "완료하기",
-                isEnabled: selected != nil && !isSubmitting,
+                title: "다음",
+                isEnabled: selected != nil,
                 action: submit
             )
             .padding(.horizontal, 20)
@@ -109,25 +99,16 @@ struct RoleSelectView: View {
         guard let role = selected else { return }
         switch role {
         case .nurse:
-            // 간호사는 API를 바로 보내지 않고 근무 병원 선택 화면으로 이동.
+            // 간호사: 전화번호 없이 근무 병원 선택 화면으로.
             onNurseNext(loginId)
         case .paramedic:
-            isSubmitting = true
-            errorMessage = nil
-            Task {
-                do {
-                    try await auth.register(loginId: loginId, role: .paramedic, phoneNumber: phoneNumber)
-                    // 성공 시 auth.state = .authenticated → 루트가 앱 플로우로 전환.
-                } catch {
-                    errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                    isSubmitting = false
-                }
-            }
+            // 구급대원: 전화번호 입력 화면으로.
+            onParamedicNext(loginId)
         }
     }
 }
 
 #Preview {
-    RoleSelectView(loginId: "nurse1", phoneNumber: "010-1234-5678", onBack: {}, onNurseNext: { _ in })
+    RoleSelectView(loginId: "nurse1", onBack: {}, onParamedicNext: { _ in }, onNurseNext: { _ in })
         .environment(AuthViewModel())
 }
