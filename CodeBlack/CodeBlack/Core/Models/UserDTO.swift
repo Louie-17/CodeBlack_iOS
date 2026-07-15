@@ -18,12 +18,15 @@ struct CreateUserRequest: Encodable {
     let hospitalId: String?
     /// 선택 화면 표시용 병원명. 서버가 HPID로 공식 병원명을 저장.
     let hospitalName: String?
+    /// 연락처(예: "010-1234-5678").
+    let phoneNumber: String?
 
-    init(loginId: String, role: ActorRole, hospitalId: String? = nil, hospitalName: String? = nil) {
+    init(loginId: String, role: ActorRole, hospitalId: String? = nil, hospitalName: String? = nil, phoneNumber: String? = nil) {
         self.loginId = loginId
         self.role = role
         self.hospitalId = hospitalId
         self.hospitalName = hospitalName
+        self.phoneNumber = phoneNumber
     }
 }
 

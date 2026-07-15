@@ -10,6 +10,7 @@ import SwiftUI
 
 struct RoleSelectView: View {
     let loginId: String
+    let phoneNumber: String
     let onBack: () -> Void
     /// 간호사 선택 시 근무 병원 선택 화면으로. (구급대원은 즉시 가입)
     let onNurseNext: (String) -> Void
@@ -115,7 +116,7 @@ struct RoleSelectView: View {
             errorMessage = nil
             Task {
                 do {
-                    try await auth.register(loginId: loginId, role: .paramedic)
+                    try await auth.register(loginId: loginId, role: .paramedic, phoneNumber: phoneNumber)
                     // 성공 시 auth.state = .authenticated → 루트가 앱 플로우로 전환.
                 } catch {
                     errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -127,6 +128,6 @@ struct RoleSelectView: View {
 }
 
 #Preview {
-    RoleSelectView(loginId: "nurse1", onBack: {}, onNurseNext: { _ in })
+    RoleSelectView(loginId: "nurse1", phoneNumber: "010-1234-5678", onBack: {}, onNurseNext: { _ in })
         .environment(AuthViewModel())
 }

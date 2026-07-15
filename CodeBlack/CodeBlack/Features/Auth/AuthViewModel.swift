@@ -89,12 +89,13 @@ final class AuthViewModel {
         loginId rawLoginId: String,
         role: ActorRole,
         hospitalId: String? = nil,
-        hospitalName: String? = nil
+        hospitalName: String? = nil,
+        phoneNumber: String? = nil
     ) async throws {
         let loginId = rawLoginId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !loginId.isEmpty else { throw AuthError.emptyLoginId }
         let result = try await userService.signup(
-            CreateUserRequest(loginId: loginId, role: role, hospitalId: hospitalId, hospitalName: hospitalName)
+            CreateUserRequest(loginId: loginId, role: role, hospitalId: hospitalId, hospitalName: hospitalName, phoneNumber: phoneNumber)
         )
         apply(result, fallbackLoginId: loginId)
     }

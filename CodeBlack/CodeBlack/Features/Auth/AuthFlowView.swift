@@ -30,16 +30,25 @@ struct AuthFlowView: View {
         case .signupId:
             SignupIdView(
                 onBack: { path.removeLast() },
-                onNext: { loginId in path.append(AuthRoute.roleSelect(loginId: loginId)) }
+                onNext: { loginId in path.append(AuthRoute.phoneInput(loginId: loginId)) }
             )
-        case .roleSelect(let loginId):
-            RoleSelectView(
+        case .phoneInput(let loginId):
+            PhoneInputView(
                 loginId: loginId,
                 onBack: { path.removeLast() },
-                onNurseNext: { id in path.append(AuthRoute.nurseHospital(loginId: id)) }
+                onNext: { phoneNumber in
+                    path.append(AuthRoute.roleSelect(loginId: loginId, phoneNumber: phoneNumber))
+                }
             )
-        case .nurseHospital(let loginId):
-            NurseHospitalView(loginId: loginId, onBack: { path.removeLast() })
+        case .roleSelect(let loginId, let phoneNumber):
+            RoleSelectView(
+                loginId: loginId,
+                phoneNumber: phoneNumber,
+                onBack: { path.removeLast() },
+                onNurseNext: { id in path.append(AuthRoute.nurseHospital(loginId: id, phoneNumber: phoneNumber)) }
+            )
+        case .nurseHospital(let loginId, let phoneNumber):
+            NurseHospitalView(loginId: loginId, phoneNumber: phoneNumber, onBack: { path.removeLast() })
         }
     }
 }
@@ -47,6 +56,7 @@ struct AuthFlowView: View {
 /// 온보딩 라우트.
 enum AuthRoute: Hashable {
     case signupId
-    case roleSelect(loginId: String)
-    case nurseHospital(loginId: String)
+    case phoneInput(loginId: String)
+    case roleSelect(loginId: String, phoneNumber: String)
+    case nurseHospital(loginId: String, phoneNumber: String)
 }
